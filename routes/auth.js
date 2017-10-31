@@ -1,13 +1,10 @@
 var express = require('express')
 var passport = require('passport')
 var User = require('../models/user')
+var api = require('../api')
 var errors = require('../errors')
 
-var router = express.Router()
-
-router.get('/', function (req, res) {
-    res.render('index', { user : req.user })
-})
+const router = require('express-promise-router')()
 
 // router.post('/register', function(req, res) {
 //     User.register(new User({
@@ -29,11 +26,14 @@ router.get('/', function (req, res) {
 // })
 
 router.post('/login', passport.authenticate('local'), function(req, res) {
-    res.json({
-        token: '',
-        expires: 0,
-        user: req.user,
-    })
+    return api.Token.createLoginToken(req.user)
+        .then((t) => {
+            res.json({
+                token: t.token,
+                expires: Math.round(t.expires / 1000),
+                user: req.user,
+            })
+        })
 })
 
 router.get('/logout', function(req, res) {

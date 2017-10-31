@@ -1,17 +1,19 @@
 
-var config = require('./config')
+const config = require('./config')
 
-var express = require('express')
-var path = require('path')
-var logger = require('./logger')
-var bodyParser = require('body-parser')
-var mongoose = require('mongoose')
-var passport = require('passport')
-var LocalStrategy = require('passport-local').Strategy
+const express = require('express')
+const path = require('path')
+const logger = require('./logger')
+const bodyParser = require('body-parser')
+const mongoose = require('mongoose')
+const passport = require('passport')
+const LocalStrategy = require('passport-local').Strategy
+const errors = require('./errors')
 
-var routes = require('./routes/index')
+const routes = require('./routes/index')
+const User = require('./models/user')
 
-var app = express()
+const app = express()
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -23,16 +25,45 @@ for (const path in routes) {
 }
 
 // passport config
-var User = require('./models/user')
-passport.use(new LocalStrategy(User.authenticate()))
-passport.serializeUser(User.serializeUser())
-passport.deserializeUser(User.deserializeUser())
+passport.use(new LocalStrategy(function(username, password, done) {
+    User.findOne({ username: username }, function (err, user) {
+
+        if (err) { return done(err) }
+
+        if (!user) {
+            return done(null, false)
+        }
+
+        User.validPassword(password, user.password)
+            .then((valid) => {
+                if(!valid) {
+                    return done(null, false)
+                }
+                done(null, user)
+            })
+            .catch((e) => {
+                done(e, false)
+            })
+    })
+}))
+
+passport.serializeUser(function(user, done) {
+    done(null, user._id)
+})
+
+passport.deserializeUser(function(id, done) {
+    User.findById(id)
+        .then((user) => {
+            done(null, user)
+        })
+        .catch((err) => {
+            done(err, null)
+        })
+})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-    var err = new Error('Not Found')
-    err.status = 404
-    next(err)
+    next(new errors.NotFound())
 })
 
 // error handlers
@@ -41,23 +72,25 @@ app.use(function(req, res, next) {
 // will print stacktrace
 if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
-        res.status(err.status || 500)
-        res.render('error', {
+        const code = err.status || 500
+        res.status(code)
+        res.json({
+            error: err,
             message: err.message,
-            error: err
+            code,
+        })
+    })
+} else {
+    // production error handler
+    // no stacktraces leaked to user
+    app.use(function(err, req, res, next) {
+        const code = err.status || 500
+        res.status(code)
+        res.json({
+            message: err.message,
+            code
         })
     })
 }
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-    res.status(err.status || 500)
-    res.render('error', {
-        message: err.message,
-        error: {}
-    })
-})
-
 
 module.exports = app

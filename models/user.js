@@ -1,12 +1,20 @@
+const bcrypt = require('bcrypt')
 var mongoose = require('mongoose')
-var Schema = mongoose.Schema
-var passportLocalMongoose = require('passport-local-mongoose')
+const Schema = mongoose.Schema
 
-var User = new Schema({
+const User = new Schema({
     username: {
         type: String,
         required: true,
         unique: true,
+        index: true,
+    },
+    uuid: {
+        type: String,
+        required: true,
+        unique: true,
+        default: require('uuid/v4'),
+        index: true,
     },
     password: {
         type: String,
@@ -20,6 +28,7 @@ var User = new Schema({
         type: String,
         required: true,
         unique: true,
+        index: true,
     },
     fullName: String,
     enabled: {
@@ -30,8 +39,29 @@ var User = new Schema({
         type: Date,
         default: Date.now
     }
+}, {
+    toJSON: {
+        transform: function (doc, ret) {
+            delete ret._id
+            delete ret.__v
+        }
+    }
 })
 
-User.plugin(passportLocalMongoose)
+User.methods.isService = function() {
+    return this.get('roles').indexOf('service') > -1
+}
+
+User.methods.isAdmin = function() {
+    return this.get('roles').indexOf('admin') > -1
+}
+
+User.statics.validPassword = function(password, hash) {
+    return bcrypt.compare(password, hash)
+}
+
+User.statics.hashPassword = function(password) {
+    return bcrypt.hash(password, 10)
+}
 
 module.exports = mongoose.model('User', User)

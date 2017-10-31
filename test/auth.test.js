@@ -1,9 +1,12 @@
 
+const assert = require('chai').assert
+
 // process.env.TESTCONFIG = "./config.json"
-
+const logger = require('../logger')
 const Raptor = require('raptor-sdk')
-
 const config = require('../config/auth.json')
+
+logger.level = 'debug'
 
 config.mongodb.url = config.mongodb.url.replace('auth', 'auth_test')
 
@@ -12,6 +15,7 @@ config.sdk = {
     username: config.users.admin.username,
     password: config.users.admin.password
 }
+
 
 describe('auth service', function () {
 
@@ -27,10 +31,16 @@ describe('auth service', function () {
         it('should login as admin', function () {
             const r = new Raptor(config.sdk)
             return r.Auth().login()
-                .then(function (currentUser) {
-                    d('Login done: %j', currentUser)
-                    assert.isTrue(r.auth.currentUser().username === configInfo.username)
-                    assert.isTrue(r.auth.currentToken() && r.auth.currentToken().length > 0)
+                .then(function (user) {
+
+                    logger.debug('Logged in %j', user)
+
+                    const u = r.Auth().getUser()
+                    const token = r.Auth().getToken()
+
+                    assert.isTrue(u && u.username === 'admin')
+                    assert.isTrue(token && token.length > 0)
+
                     return Promise.resolve()
                 })
         })

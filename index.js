@@ -7,21 +7,23 @@ const start = () => {
 
     const config = require('./config')
 
+    logger.level = config.logLevel || 'info'
+
     // mongoose
-    logger.info('Connecting to db')
+    logger.debug('Connecting to db')
     return require('./db').connect(config.mongodb)
         .then((db) => {
             logger.info('Running setup')
             return require('./setup').run()
         })
         .then(() => {
-            logger.info('Starting server')
+            logger.debug('Starting server')
             const app = require('./app')
             server = require('http').Server(app)
             return new Promise(function(resolve, reject) {
                 server.listen(config.port, function(err) {
                     if(err) return reject(err)
-                    logger.info(`Listening on ::${config.port}`)
+                    logger.info(`Server listening on ::${config.port}`)
                     resolve()
                 })
             })

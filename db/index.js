@@ -6,9 +6,6 @@ const config = require('../config')
 
 let db = null
 
-module.exports.User = require('./user')
-
-
 module.exports.conn = () => {
     if (db === null) throw new Error('db must be initialized, call `db.connect()` first')
     return db
@@ -34,7 +31,7 @@ module.exports.disconnect = () => {
     if(db === null) {
         return Promise.resolve()
     }
-    return db.disconnect()
+    return db.close()
         .then(() => {
             db = null
             return Promise.resolve()
