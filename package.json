@@ -1,0 +1,33 @@
+{
+    "name": "raptor-auth",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "serve": "./bin/cli.js",
+        "test": "./node_modules/mocha/bin/mocha test/*.test.js",
+        "test-file": "./node_modules/mocha/bin/mocha test/ --grep",
+        "release-major": "./node_modules/standard-version/bin/cli.js",
+        "release": "./node_modules/standard-version/bin/cli.js -- --release-as minor"
+    },
+    "author": "Luca Capra <lcapra@fbk.eu>",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "bcrypt": "^1.0.3",
+        "bluebird": "^3.5.1",
+        "body-parser": "^1.18.2",
+        "express": "^4.16.2",
+        "mongoose": "^4.12.5",
+        "passport": "^0.4.0",
+        "passport-local": "^1.0.0",
+        "passport-local-mongoose": "^4.4.0",
+        "raptor-sdk": "^4.3.30",
+        "winston": "^2.4.0"
+    },
+    "devDependencies": {
+        "eslint": "^4.10.0",
+        "mocha": "^4.0.1",
+        "standard-version": "^4.2.0"
+    }
+}
