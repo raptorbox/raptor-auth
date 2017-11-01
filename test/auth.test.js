@@ -47,49 +47,28 @@ describe('auth service', function () {
 
         it('should logout', function () {
             return util.createUserInstance()
-                .then(r => r.Auth().logout())
+                .then(r => {
+                    const token = r.Auth().getToken()
+                    return r.Auth().logout()
+                        .then(() => (new Raptor({
+                            url: r.getConfig().url,
+                            token
+                        })).Auth().login()
+                            .catch(() => Promise.resolve()))
+                })
         })
 
-        // it('should login again and use a different token', function () {
-        //     return r.auth.logout()
-        //         .then(function () {
-        //             assert.isTrue(r.auth.currentToken() === null)
-        //             assert.isTrue(r.auth.currentUser() === null)
-        //             return r.auth.login().then(function () {
-        //                 return loadAuthToken().then(function (token2) {
-        //                     assert.notEqual(token.id, token2.id)
-        //                     return Promise.resolve()
-        //                 })
-        //             })
-        //         })
-        // })
-        //
-        // it('should login again and have just one login token', function () {
-        //     return r.auth.logout()
-        //         .then(function () {
-        //             return r.auth.login().then(function () {
-        //                 return listAuthTokens()
-        //                     .then(function (logins) {
-        //                         d('Login tokens %j', logins)
-        //                         assert.equal(logins.length, 1)
-        //                         return Promise.resolve()
-        //                     })
-        //             })
-        //         })
-        // })
-        //
-        // it('should refresh the auth token and still have on token avail', function () {
-        //     return r.auth.login()
-        //         .then(function () {
-        //             return r.auth.refreshToken()
-        //                 .then(listAuthTokens)
-        //                 .then(function (logins) {
-        //                     assert.equal(logins.length, 1)
-        //                     return Promise.resolve()
-        //                 })
-        //         })
-        // })
-
+        it('should refresh token', function () {
+            return util.createUserInstance()
+                .then((r) => {
+                    const t1 = r.Auth().getToken()
+                    return r.Auth().refreshToken()
+                        .then(function () {
+                            assert.notEqual(t1, r.Auth().getToken())
+                            return Promise.resolve()
+                        })
+                })
+        })
 
     })
 })

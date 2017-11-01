@@ -1,32 +1,17 @@
-var express = require('express')
 var passport = require('passport')
-var User = require('../models/user')
 var api = require('../api')
-var errors = require('../errors')
 
 const router = require('express-promise-router')()
 
-// router.post('/register', function(req, res) {
-//     User.register(new User({
-//         username : req.body.username
-//     }), req.body.password, function(err, user) {
-//
-//         if (err) {
-//             return res.json(new errors.InternalServerError(err))
-//         }
-//
-//         passport.authenticate('local')(req, res, function () {
-//             res.json({
-//                 token: '',
-//                 expires: 0,
-//                 user
-//             })
-//         })
-//     })
-// })
+const bearerAuth = () => {
+    return passport.authenticate('bearer', {
+        failWithError: true,
+        session: false
+    })
+}
 
 router.post('/login', passport.authenticate('local'), function(req, res) {
-    return api.Token.createLoginToken(req.user)
+    return api.Token.createLogin(req.user)
         .then((t) => {
             res.json({
                 token: t.token,
@@ -36,17 +21,31 @@ router.post('/login', passport.authenticate('local'), function(req, res) {
         })
 })
 
-router.get('/logout', function(req, res) {
-    // drop token
-    req.logout()
-    res.send(202)
+const logout = (req, res) => {
+    return api.models.Token.remove({ _id: req.authInfo.token._id })
+        .then(() => {
+            req.logout()
+            res.status(202).send()
+        })
+}
+
+router.delete('/login', bearerAuth(), logout)
+router.get('/logout', bearerAuth(), logout)
+
+router.get('/refresh', bearerAuth(), function(req, res){
+    return api.models.Token.remove({ _id: req.authInfo.token._id })
+        .then(() => api.Token.createLogin(req.user))
+        .then((t) => {
+            res.json({
+                token: t.token,
+                expires: t.expires
+            })
+        })
 })
 
-router.post('/refresh', function(req, res){
-    res.json({
-        token: '',
-        expires: ''
-    })
+router.get('/me', bearerAuth(), function(req, res) {
+    res.json(req.user)
+    return Promise.resolve()
 })
 
 module.exports = router

@@ -62,7 +62,7 @@ module.exports = router
  *         schema:
  *           $ref: '#/definitions/User'
  */
-router.post('/', passport.authenticate('local'), function(req, res) {
+router.post('/', passport.authenticate('bearer', { session: false }), function(req, res) {
     return api.User.save(req.body)
         .then((user) => {
             res.json(user)

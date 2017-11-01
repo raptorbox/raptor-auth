@@ -21,8 +21,9 @@
         "mongoose": "^4.12.5",
         "node-uuid": "^1.4.8",
         "passport": "^0.4.0",
+        "passport-http-bearer": "^1.0.1",
         "passport-local": "^1.0.0",
-        "raptor-sdk": "^4.3.30",
+        "raptor-sdk": "^4.3.37",
         "swagger-jsdoc": "^1.9.7",
         "winston": "^2.4.0"
     },

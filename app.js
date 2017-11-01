@@ -2,11 +2,14 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
+const BearerStrategy = require('passport-http-bearer').Strategy
+
 const errors = require('./errors')
 const logger = require('./logger')
 
 const routes = require('./routes/index')
 const User = require('./models/user')
+const Token = require('./models/token')
 
 const app = express()
 
@@ -20,17 +23,13 @@ app.get('/swagger.json', function(req, res) {
     res.json(require('./swagger')())
 })
 
-for (const path in routes) {
-    const p = path === '' ? '' : `/${path}`
-    logger.debug(`Registered /auth${p} endpoint`)
-    app.use(`/auth${p}`, routes[path])
-}
-
 // passport config
 passport.use(new LocalStrategy(function(username, password, done) {
     User.findOne({ username: username }, function (err, user) {
 
-        if (err) { return done(err) }
+        if (err) {
+            return done(err)
+        }
 
         if (!user) {
             return done(null, false)
@@ -49,6 +48,32 @@ passport.use(new LocalStrategy(function(username, password, done) {
     })
 }))
 
+passport.use(new BearerStrategy(function(t, done) {
+    Token.findOne({ token: t })
+        .then((token) => {
+
+            if (!token) {
+                return done(null, false)
+            }
+
+            return User.findOne({ uuid: token.userId})
+                .then((user) => {
+
+                    if(user === null) {
+                        return done(null, false)
+                    }
+
+                    if(!user.enabled) {
+                        return done(null, false)
+                    }
+
+                    done(null, user, { token })
+                })
+        })
+        .catch((e) => done(e, false))
+}
+))
+
 passport.serializeUser(function(user, done) {
     done(null, user._id)
 })
@@ -63,37 +88,30 @@ passport.deserializeUser(function(id, done) {
         })
 })
 
+for (const path in routes) {
+    const p = path === '' ? '' : `/${path}`
+    logger.debug(`Registered /auth${p} endpoint`)
+    app.use(`/auth${p}`, routes[path])
+}
+
 // last call catch 404 and forward to error handler
 app.use(function(req, res, next) {
     next(new errors.NotFound())
 })
 
 // error handlers
+app.use(function(err, req, res, next) {
 
-// development error handler, with stacktrace
-if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-        const code = err.code || 500
-        res.status(code)
-        const r = err.toJSON ? err.toJSON() : {
-            error: err,
-            message: err.message,
-            code,
-        }
-        res.json(r)
+    if(err.message === 'Unauthorized') {
+        err = new errors.Unauthorized()
+    }
+
+    err.code = err.code || 500
+    res.status(err.code)
+    res.json({
+        message: err.message,
+        code: err.code,
     })
-} else {
-    // production error handler
-    // no stacktraces leaked to user
-    app.use(function(err, req, res, next) {
-        const code = err.status || 500
-        res.status(code)
-        const r = err.toJSON ? err.toJSON() : {
-            message: err.message,
-            code
-        }
-        res.json(r)
-    })
-}
+})
 
 module.exports = app

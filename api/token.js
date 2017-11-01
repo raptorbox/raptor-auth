@@ -28,7 +28,7 @@ l.save = (t) => {
         })
 }
 
-l.createLoginToken = (user) => {
+l.createLogin = (user) => {
     const t1 = Date.now()
     const sec = user.password + (Math.random()*t1)
     const token = new Token({

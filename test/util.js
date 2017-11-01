@@ -50,6 +50,7 @@ l.createUserInstance = (roles) => {
                         password: u.password,
                     }))
                     return r2.Auth().login()
+                        .then(() => Promise.resolve(r2))
                 })
         })
 }
