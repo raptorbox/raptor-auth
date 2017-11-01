@@ -1,14 +1,9 @@
-
-const config = require('./config')
-
 const express = require('express')
-const path = require('path')
-const logger = require('./logger')
 const bodyParser = require('body-parser')
-const mongoose = require('mongoose')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const errors = require('./errors')
+const logger = require('./logger')
 
 const routes = require('./routes/index')
 const User = require('./models/user')
@@ -20,8 +15,15 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.use(passport.initialize())
 
+//generate API docs
+app.get('/swagger.json', function(req, res) {
+    res.json(require('./swagger')())
+})
+
 for (const path in routes) {
-    app.use(`/${path}`, routes[path])
+    const p = path === '' ? '' : `/${path}`
+    logger.debug(`Registered /auth${p} endpoint`)
+    app.use(`/auth${p}`, routes[path])
 }
 
 // passport config
@@ -61,24 +63,24 @@ passport.deserializeUser(function(id, done) {
         })
 })
 
-// catch 404 and forward to error handler
+// last call catch 404 and forward to error handler
 app.use(function(req, res, next) {
     next(new errors.NotFound())
 })
 
 // error handlers
 
-// development error handler
-// will print stacktrace
+// development error handler, with stacktrace
 if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
-        const code = err.status || 500
+        const code = err.code || 500
         res.status(code)
-        res.json({
+        const r = err.toJSON ? err.toJSON() : {
             error: err,
             message: err.message,
             code,
-        })
+        }
+        res.json(r)
     })
 } else {
     // production error handler
@@ -86,10 +88,11 @@ if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
         const code = err.status || 500
         res.status(code)
-        res.json({
+        const r = err.toJSON ? err.toJSON() : {
             message: err.message,
             code
-        })
+        }
+        res.json(r)
     })
 }
 

@@ -29,6 +29,8 @@ const createErrorType = (name, code, defaultMessage) => {
     lib[name] = err
 }
 
+lib.BaseError = BaseError
+
 createErrorType('BadRequest', 400, 'Bad Request')
 createErrorType('Unauthorized', 401, 'Unauthorized')
 createErrorType('Forbidden', 403, 'Forbidden')

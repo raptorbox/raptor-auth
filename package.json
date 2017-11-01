@@ -23,6 +23,7 @@
         "passport": "^0.4.0",
         "passport-local": "^1.0.0",
         "raptor-sdk": "^4.3.30",
+        "swagger-jsdoc": "^1.9.7",
         "winston": "^2.4.0"
     },
     "devDependencies": {

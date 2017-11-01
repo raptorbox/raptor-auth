@@ -29,7 +29,7 @@ l.save = (t) => {
 }
 
 l.createLoginToken = (user) => {
-    const t1 = (new Date().getTime())
+    const t1 = Date.now()
     const sec = user.password + (Math.random()*t1)
     const token = new Token({
         name: 'login_'+t1,
