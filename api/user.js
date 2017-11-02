@@ -1,31 +1,43 @@
 
 const l = module.exports
+
+const errors = require('../errors')
 const User = require('../models/user')
 
-l.save = (u) => {
-    return User.findOne({ username: u.username })
+l.find = (query, pager) => {
+    query = query || {}
+    pager = pager || {}
+    return User.findPaged(query, pager)
+}
+
+l.read = (query) => {
+    return User.findOne(query)
         .then((user) => {
+            if(!user) throw new errors.NotFound()
+            return Promise.resolve(user)
+        })
+}
 
-            let hashPassword = false
-            if(!user) {
-                user = new User(u)
-                hashPassword = true
-            } else {
-                if(u.password && user.password !== u.password) {
-                    hashPassword = true
-                }
-                user = Object.assign(user, u)
+l.update = (u) => {
+    return l.read({ username: u.username })
+        .then(user => user.merge(u))
+        .then(User.save)
+}
+
+l.create = (u) => {
+    return (new User(u)).save()
+}
+
+l.delete = (query) => {
+    return User.remove(query)
+}
+
+l.save = (u) => {
+    return l.update(u)
+        .catch((e) => {
+            if(e instanceof errors.NotFound) {
+                return l.create(u)
             }
-
-            let p = Promise.resolve()
-            if (hashPassword) {
-                p = User.hashPassword(u.password)
-                    .then((hash) => {
-                        user.password = hash
-                        return Promise.resolve()
-                    })
-            }
-
-            return p.then(() => user.save())
+            return Promise.reject(e)
         })
 }
