@@ -21,4 +21,6 @@ var Role = new Schema({
     }
 })
 
+Role.plugin(require('./plugin/pager'))
+
 module.exports = mongoose.model('Role', Role)

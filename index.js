@@ -7,12 +7,12 @@ const start = () => {
 
     const config = require('./config')
 
-    logger.level = config.logLevel || 'info'
+    logger.level = process.env.LOG_LEVEL || config.logLevel || 'info'
 
     // mongoose
     logger.debug('Connecting to db')
     return require('./db').connect(config.mongodb)
-        .then((db) => {
+        .then(() => {
             logger.info('Running setup')
             return require('./setup').run()
         })

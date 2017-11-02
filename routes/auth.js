@@ -48,4 +48,16 @@ module.exports.router = (router) => {
         return Promise.resolve()
     })
 
+    router.post('/check', bearerAuth(), function(req, res) {
+        return require('../authz').can(req.body)
+            .then(() => res.json({
+                result: true
+            }))
+            .catch((e) => res.json({
+                result: false,
+                code: e.code,
+                message: e.message,
+            }))
+    })
+
 }

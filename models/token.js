@@ -61,6 +61,7 @@ var Token = new Schema({
     }
 })
 
+Token.plugin(require('./plugin/pager'))
 
 Token.pre('save', function(next) {
     var token = this
@@ -79,6 +80,10 @@ Token.pre('save', function(next) {
             next(e)
         })
 })
+
+Token.methods.getOwner = function() {
+    return this.userId
+}
 
 Token.methods.merge = function(t) {
     const token = this

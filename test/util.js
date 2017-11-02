@@ -2,12 +2,11 @@ const l = module.exports
 
 process.env.TESTCONFIG = './config.json'
 
-const logger = require('../logger')
 const Raptor = require('raptor-sdk')
 const config = require('../config/auth.json')
 
 // setup default config
-config.logLevel = logger.level = 'warn'
+// config.logLevel = logger.level = 'debug'
 config.mongodb.url = config.mongodb.url.replace('auth', 'auth_test')
 config.sdk = {
     url: `http://localhost:${config.port}`,
@@ -44,7 +43,7 @@ l.createUserInstance = (roles) => {
             u.roles = roles ? roles : u.roles
             return r.Admin().User().create(u)
                 .then(() => {
-                    const r2 = new Raptor(Object.assign(config.sdk, {
+                    const r2 = new Raptor(Object.assign({}, config.sdk, {
                         username: u.username,
                         password: u.password,
                     }))

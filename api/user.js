@@ -21,7 +21,7 @@ l.read = (query) => {
 l.update = (u) => {
     return l.read({ username: u.username })
         .then(user => user.merge(u))
-        .then(User.save)
+        .then((user) => user.save())
 }
 
 l.create = (u) => {

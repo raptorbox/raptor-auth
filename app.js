@@ -71,8 +71,7 @@ passport.use(new BearerStrategy(function(t, done) {
                 })
         })
         .catch((e) => done(e, false))
-}
-))
+}))
 
 passport.serializeUser(function(user, done) {
     done(null, user._id)
@@ -101,6 +100,7 @@ for (const path in routes) {
             failWithError: true,
             session: false
         }))
+        subrouter.use(require('./authz').check({ type: path }))
     }
     routes[path].router(subrouter)
 
