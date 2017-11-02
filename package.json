@@ -1,8 +1,8 @@
 {
     "name": "raptor-auth",
-    "version": "1.0.0",
+    "version": "5.0.0",
     "description": "",
-    "main": "index.js",
+    "main": "./bin/cli.js",
     "scripts": {
         "test": "./node_modules/mocha/bin/mocha test/*.test.js",
         "serve": "./bin/cli.js",

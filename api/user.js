@@ -4,7 +4,7 @@ const l = module.exports
 const errors = require('../errors')
 const User = require('../models/user')
 
-l.find = (query, pager) => {
+l.list = (query, pager) => {
     query = query || {}
     pager = pager || {}
     return User.findPaged(query, pager)

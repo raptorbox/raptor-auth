@@ -1,20 +1,6 @@
 
 const assert = require('chai').assert
-
-const logger = require('../logger')
-const config = require('../config/auth.json')
 const util = require('./util')
-
-logger.level = 'debug'
-
-config.mongodb.url = config.mongodb.url.replace('auth', 'auth_test')
-
-config.sdk = {
-    url: `http://localhost:${config.port}`,
-    username: config.users.admin.username,
-    password: config.users.admin.password
-}
-
 
 describe('auth service', function () {
 

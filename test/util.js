@@ -2,14 +2,12 @@ const l = module.exports
 
 process.env.TESTCONFIG = './config.json'
 
-const assert = require('chai').assert
-
 const logger = require('../logger')
 const Raptor = require('raptor-sdk')
 const config = require('../config/auth.json')
 
 // setup default config
-logger.level = 'debug'
+config.logLevel = logger.level = 'warn'
 config.mongodb.url = config.mongodb.url.replace('auth', 'auth_test')
 config.sdk = {
     url: `http://localhost:${config.port}`,
@@ -18,7 +16,8 @@ config.sdk = {
 }
 
 l.randomName = (prefix) => {
-    const rnd = Math.random() * Date.now()
+    prefix = prefix || ''
+    const rnd = Math.round(Math.random() * Date.now())
     return `test_${prefix}_${rnd}`
 }
 

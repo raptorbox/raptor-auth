@@ -1,7 +1,17 @@
+const bcrypt = require('bcrypt')
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 
+const saltFactor = 10
+
 var Token = new Schema({
+    id: {
+        type: String,
+        index: true,
+        required: true,
+        unique: true,
+        default: require('uuid/v4')
+    },
     name: {
         type: String,
         index: true,
@@ -11,7 +21,7 @@ var Token = new Schema({
         type: String,
         index: true,
         unique: true,
-        required: true,
+        required: false,
     },
     secret: {
         type: String,
@@ -24,14 +34,16 @@ var Token = new Schema({
     },
     enabled: {
         type: Boolean,
-        default: true
+        default: true,
+        required: true,
     },
     expires: {
         type: Date,
         // +30 min
         default: function() {
             return (new Date()).getTime() + (30 * (60 * 60 * 1000))
-        }
+        },
+        required: false
     },
     userId: {
         type: String,
@@ -44,12 +56,61 @@ var Token = new Schema({
         transform: function (doc, ret) {
             delete ret._id
             delete ret.__v
+            delete ret.type
         }
     }
 })
 
-Token.statics.generate = function(sec) {
-    return require('bcrypt').hash(sec, 10)
+
+Token.pre('save', function(next) {
+    var token = this
+
+    // only hash the password if it has been modified (or is new)
+    if (!token.isModified('secret')) {
+        return next()
+    }
+
+    bcrypt.hash(token.secret, saltFactor)
+        .then((hash) => {
+            token.token = hash
+            next()
+        })
+        .catch((e) => {
+            next(e)
+        })
+})
+
+Token.methods.merge = function(t) {
+    const token = this
+    return Promise.resolve()
+        .then(() => {
+
+            if (t.name) {
+                token.name = t.name
+            }
+            if (t.secret) {
+                token.secret = t.secret
+            }
+            if (t.expires !== undefined) {
+                if(t.expires === 0) {
+                    t.expires = null
+                } else {
+                    token.expires = new Date(t.expires * 1000)
+                }
+            }
+
+            if (t.enabled !== undefined && t.enabled !== null) {
+                token.enabled = t.enabled
+            }
+
+            return Promise.resolve()
+        })
+        .then(() => Promise.resolve(token))
 }
+
+Token.statics.generate = function(sec) {
+    return require('bcrypt').hash(sec, saltFactor)
+}
+
 
 module.exports = mongoose.model('Token', Token)

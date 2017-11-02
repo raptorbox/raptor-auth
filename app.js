@@ -88,10 +88,23 @@ passport.deserializeUser(function(id, done) {
         })
 })
 
+
 for (const path in routes) {
-    const p = path === '' ? '' : `/${path}`
-    logger.debug(`Registered /auth${p} endpoint`)
-    app.use(`/auth${p}`, routes[path])
+
+    const isRoot = path === ''
+    const subpath = isRoot ? '' : `/${path}`
+    const subrouter = require('express-promise-router')()
+
+    // check token only on subpath like user, role, token
+    if(!isRoot) {
+        subrouter.use(passport.authenticate('bearer', {
+            failWithError: true,
+            session: false
+        }))
+    }
+    routes[path].router(subrouter)
+
+    app.use(`/auth${subpath}`, subrouter)
 }
 
 // last call catch 404 and forward to error handler
