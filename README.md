@@ -1,2 +1,1 @@
-# raptor-auth
-Raptor Auth API
+# Raptor Auth API

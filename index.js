@@ -38,9 +38,13 @@ const stop = () => {
             logger.info('Server stopped')
             resolve()
         })
-    }).then(() => {
-        return require('./db').disconnect()
     })
+        .then(() => {
+            return require('./db').disconnect()
+        })
+        .then(() => {
+            return require('./broker').close()
+        })
 }
 
 module.exports.start = start

@@ -119,6 +119,10 @@ app.use(function(err, req, res, next) {
         err = new errors.Unauthorized()
     }
 
+    if(!(err instanceof errors.BaseError)) {
+        logger.error(err)
+    }
+
     err.code = err.code || 500
     res.status(err.code)
     res.json({

@@ -3,6 +3,12 @@ const l = module.exports
 
 const errors = require('../errors')
 const Token = require('../models/token')
+const broker = require('../broker')
+
+const notify = (op, token) => {
+    broker.send({type: 'token', id: token.id, op, token})
+    return Promise.resolve(token)
+}
 
 l.createLogin = (user) => {
     const t1 = Date.now()
@@ -31,16 +37,22 @@ l.read = (query) => {
 
 l.update = (t) => {
     return l.read({ id: t.id })
-        .then(token => token.merge(t))
-        .then((token) => token.save())
+        .then(token => token.merge(t)
+            .then((token) => token.save()
+                .then(() => notify('update', token))
+            )
+        )
 }
 
 l.create = (t) => {
-    return (new Token(t)).save()
+    const token = new Token(t)
+    return token.save()
+        .then(() => notify('create', token))
 }
 
-l.delete = (query) => {
-    return Token.remove(query)
+l.delete = (token) => {
+    return Token.remove(token)
+        .then((token) => notify('delete', token))
 }
 
 l.save = (t) => {

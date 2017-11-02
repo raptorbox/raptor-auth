@@ -19,6 +19,7 @@
         "express": "^4.16.2",
         "express-promise-router": "^2.0.0",
         "mongoose": "^4.12.5",
+        "mqtt": "^2.13.1",
         "node-uuid": "^1.4.8",
         "passport": "^0.4.0",
         "passport-http-bearer": "^1.0.1",

@@ -2,6 +2,12 @@
 const l = module.exports
 const Role = require('../models/role')
 const errors = require('../errors')
+const broker = require('../broker')
+
+const notify = (op, role) => {
+    broker.send({type: 'role', id: role.id, op, role})
+    return Promise.resolve(role)
+}
 
 l.save = (r) => {
     return Role.findOne({
@@ -9,17 +15,20 @@ l.save = (r) => {
         domain: r.domain || null
     })
         .then((role) => {
-            if(!role) {
+            const exists = role
+            if(!exists) {
                 role = new Role(r)
             } else {
                 role = Object.assign(role, r)
             }
             return role.save()
+                .then(() => notify(exists ? 'update' : 'create', role))
         })
 }
 
-l.delete = (query) => {
-    return Role.remove(query)
+l.delete = (role) => {
+    return Role.remove(role)
+        .then(() => notify('delete', role))
 }
 
 l.list = (query, pager) => {
