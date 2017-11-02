@@ -72,8 +72,8 @@ User.pre('save', function(next) {
 })
 
 // return self id (allow user to edit is own account)
-User.methods.getOwner = function() {
-    return this.uuid
+User.methods.isOwner = function(user) {
+    return this.uuid === user.uuid
 }
 
 User.methods.merge = function(u) {

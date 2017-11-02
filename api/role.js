@@ -4,11 +4,10 @@ const Role = require('../models/role')
 const errors = require('../errors')
 
 l.save = (r) => {
-    let p = Promise.resolve(null)
-    if(r.id) {
-        p = Role.findOne({ id: r.id })
-    }
-    return p
+    return Role.findOne({
+        name: r.name,
+        domain: r.domain || null
+    })
         .then((role) => {
             if(!role) {
                 role = new Role(r)

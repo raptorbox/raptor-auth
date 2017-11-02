@@ -20,8 +20,8 @@ const createDefaultUsers = () => {
 
 const createDefaultRoles = () => {
     return Promise.all(Object.keys(config.roles).map((k) => config.roles[k]))
-        .each((u) => {
-            return api.Role.save(u)
+        .each((r) => {
+            return api.Role.save(r)
         })
         .then(() => {
             logger.debug('Stored default roles')

@@ -60,4 +60,9 @@ module.exports.router = (router) => {
             }))
     })
 
+    router.post('/sync', bearerAuth(), function(req, res) {
+        return require('../authz').sync(req.body)
+            .then(() => res.status(202).send())
+    })
+
 }

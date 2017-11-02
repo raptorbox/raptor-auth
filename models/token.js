@@ -81,8 +81,8 @@ Token.pre('save', function(next) {
         })
 })
 
-Token.methods.getOwner = function() {
-    return this.userId
+Token.methods.isOwner = function(user) {
+    return this.userId === user.uuid
 }
 
 Token.methods.merge = function(t) {

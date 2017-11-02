@@ -28,7 +28,9 @@ const can = (req) => {
             return api.models.Role.find({ name: { $in: user.roles }})
                 .then((roles) => {
 
-                    const permissions = roles.reduce((p, r) => p.concat(r.permissions), [])
+                    const permissions = roles.reduce((p, r) => {
+                        return p.concat(r.permissions)
+                    }, [])
                     const has = (perm) => {
                         const hasPerm = permissions.indexOf(perm) > -1
                         if(hasPerm) {
@@ -37,37 +39,64 @@ const can = (req) => {
                         return hasPerm
                     }
 
-                    logger.debug('Check %s in permissions %j', req.permission, permissions)
-
+                    logger.debug('Check %s_%s[%s] for %s in permissions %j',
+                        req.type,
+                        req.permission,
+                        req.subjectId,
+                        req.userId,
+                        permissions)
 
                     if(has('admin')) {
                         return Promise.resolve()
                     }
 
                     if(req.type) {
-                        if(has(req.type + '_admin')) {
+                        if(has('admin_' + req.type)) {
+                            return Promise.resolve()
+                        }
+                        if(has(req.permission + '_' + req.type)) {
                             return Promise.resolve()
                         }
                     }
 
                     if(subject) {
-                        if(subject.getOwner && subject.getOwner().uuid === user.uuid) {
+
+                        if(subject.isOwner && subject.isOwner(user)) {
                             if(has('admin_own')) {
                                 return Promise.resolve()
                             }
                             if(req.type) {
-                                if(has(req.type + '_admin_own')) {
+                                //admin_own_device
+                                if(has('admin_own_' + req.type)) {
+                                    return Promise.resolve()
+                                }
+                                //read_own_device
+                                if(has(req.permission + '_own_' + req.type)) {
                                     return Promise.resolve()
                                 }
                             }
                         }
+
                     }
 
                     // TODO: app level check
-                    // TODO: acl check
 
-                    logger.debug('User %s not allowed to %s on %s', user.username, req.permission, req.type)
-                    return Promise.reject(new errors.Forbidden())
+                    // acl check
+                    const q = Object.assign({}, req)
+                    q.permission = { $in: [ q.permission, 'admin' ] }
+                    return api.models.Acl.find(req)
+                        .then((acls) => {
+
+                            if(acls.filter((acl) => acl.allowed).length) {
+                                return Promise.resolve()
+                            }
+
+                            return Promise.reject(new errors.Forbidden())
+                        })
+                        .catch((e) => {
+                            logger.debug('User %s not allowed to %s on %s', user.username, req.permission, req.type)
+                            return Promise.reject(e)
+                        })
                 })
         })
     })
@@ -131,4 +160,9 @@ const loader = (entity, id) => {
     }
 }
 
-module.exports = { can, check, loader }
+const sync = (raw) => {
+    const acl = new api.models.Acl(raw)
+    return acl.save()
+}
+
+module.exports = { can, check, loader, sync }

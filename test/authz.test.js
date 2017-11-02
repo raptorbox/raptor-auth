@@ -1,8 +1,5 @@
 
 const assert = require('chai').assert
-
-const logger = require('../logger')
-const Raptor = require('raptor-sdk')
 const util = require('./util')
 
 describe('auth service', function () {
@@ -25,7 +22,7 @@ describe('auth service', function () {
                                 .create({
                                     name: 'test',
                                     permissions: [
-                                        'device_admin',
+                                        'admin_device',
                                     ]
                                 })
                                 .then((role) => {
@@ -36,6 +33,29 @@ describe('auth service', function () {
                                 .then(() => {
                                     return usr.Auth()
                                         .can('device', 'read')
+                                        .then((res) => {
+                                            assert.isTrue(res.result)
+                                            return Promise.resolve()
+                                        })
+                                })
+                        })
+                })
+        })
+
+        it('should enforce ACL', function () {
+            return util.getRaptor()
+                .then((adm) => {
+                    return util.createUserInstance()
+                        .then(function (usr) {
+                            return adm.Auth().sync({
+                                type: 'device',
+                                permission: 'update',
+                                subjectId: 'foo9000',
+                                userId: usr.Auth().getUser().uuid
+                            })
+                                .then(() => {
+                                    return usr.Auth()
+                                        .can('device', 'update', 'foo9000')
                                         .then((res) => {
                                             assert.isTrue(res.result)
                                             return Promise.resolve()
