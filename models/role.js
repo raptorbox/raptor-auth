@@ -2,12 +2,19 @@ var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 
 var Role = new Schema({
+    id: {
+        type: String,
+        index: true,
+        required: true,
+        unique: true,
+        default: require('uuid/v4')
+    },
     name: {
         type: String,
         index: true,
     },
     permissions: [String],
-    appId: {
+    domain: {
         type: String,
         index: true,
         default: null,
