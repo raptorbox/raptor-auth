@@ -4,6 +4,16 @@ var Schema = mongoose.Schema
 
 const saltFactor = 10
 
+const random = (len) => {
+    len = len || 24
+    let s = ''
+    while(s.length < len) {
+        s += ((Math.random() * Date.now()).toString(36).substr(2))
+            .replace(/[^a-z]*/g, '')
+    }
+    return s.substr(0, len)
+}
+
 var Token = new Schema({
     id: {
         type: String,
@@ -26,6 +36,7 @@ var Token = new Schema({
     secret: {
         type: String,
         required: true,
+        default: random,
     },
     type: {
         type: String,
@@ -50,6 +61,12 @@ var Token = new Schema({
         ref: 'User',
         index: true,
         required: true,
+    },
+    clientId: {
+        type: String,
+        ref: 'Client',
+        index: true,
+        required: false,
     }
 }, {
     toJSON: {
@@ -85,6 +102,10 @@ Token.methods.isOwner = function(user) {
     return this.userId === user.uuid
 }
 
+Token.methods.isExpired = function() {
+    return Date.now() > this.expires
+}
+
 Token.methods.merge = function(t) {
     const token = this
     return Promise.resolve()
@@ -117,5 +138,6 @@ Token.statics.generate = function(sec) {
     return require('bcrypt').hash(sec, saltFactor)
 }
 
+Token.statics.random = random
 
 module.exports = mongoose.model('Token', Token)

@@ -23,6 +23,8 @@ app.get('/swagger.json', function(req, res) {
     res.json(require('./swagger')())
 })
 
+app.post('/oauth/token', require('./oauth2').token)
+
 // passport config
 passport.use(new LocalStrategy(function(username, password, done) {
     User.findOne({ username: username }, function (err, user) {
@@ -54,6 +56,13 @@ passport.use(new BearerStrategy(function(t, done) {
 
             if (!token) {
                 return done(null, false)
+            }
+
+            if (token.isExpired()) {
+                return Token.remove({ _id: token._id })
+                    .then(() => {
+                        return Promise.reject(new errors.BadRequest('Token is expired'))
+                    })
             }
 
             return User.findOne({ uuid: token.userId})
