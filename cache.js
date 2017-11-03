@@ -3,7 +3,12 @@ const l = module.exports
 const defaultTTL = 10 // in sec
 let cache
 
+// avoid reinitialization during  tests
+let initialized = false
+
 l.initialize = () => {
+    if (initialized) return Promise.resolve()
+
     const mongoose = require('mongoose'),
         cacheManager = require('cache-manager'),
         mongooseStore = require('cache-manager-mongoose')
@@ -17,6 +22,8 @@ l.initialize = () => {
         },
         ttl: defaultTTL
     })
+
+    initialized  = true
 }
 
 

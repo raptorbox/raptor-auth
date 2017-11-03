@@ -28,8 +28,8 @@ server.exchange(oauth2orize.exchange.password(function(client, username, passwor
                 }
 
                 return Promise.all([
-                    RefreshToken.remove({ userId: user.uuid, clientId: client.clientId }),
-                    Token.remove({ userId: user.uuid, clientId: client.clientId })
+                    RefreshToken.remove({ userId: user.uuid, clientId: client.id }),
+                    Token.remove({ userId: user.uuid, clientId: client.id })
                 ])
             }).then(() => {
                 return Promise.all([Token.generate(), Token.generate()]).then((tks) => {
@@ -39,7 +39,7 @@ server.exchange(oauth2orize.exchange.password(function(client, username, passwor
 
                     const token = new Token({
                         token: tokenValue,
-                        clientId: client.clientId,
+                        clientId: client.id,
                         userId: user.uuid,
                         type: 'oauth2',
                         expires: Date.now() + (config.oauth2.ttl*1000)
@@ -47,7 +47,7 @@ server.exchange(oauth2orize.exchange.password(function(client, username, passwor
 
                     const refreshToken = new RefreshToken({
                         token: refreshTokenValue,
-                        clientId: client.clientId,
+                        clientId: client.id,
                         userId: user.uuid
                     })
 
@@ -83,8 +83,8 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
             }
 
             return Promise.all([
-                RefreshToken.remove({ userId: user.uuid, clientId: client.clientId }),
-                Token.remove({ userId: user.uuid, clientId: client.clientId })
+                RefreshToken.remove({ userId: user.uuid, clientId: client.id }),
+                Token.remove({ userId: user.uuid, clientId: client.id })
             ]).then(() => {
                 return Promise.all([Token.generate(), Token.generate()]).then((tks) => {
 
@@ -93,13 +93,13 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
 
                     const token = new Token({
                         token: tokenValue,
-                        clientId: client.clientId,
+                        clientId: client.id,
                         userId: user.uuid
                     })
 
                     const refreshToken = new RefreshToken({
                         token: refreshTokenValue,
-                        clientId: client.clientId,
+                        clientId: client.id,
                         userId: user.uuid
                     })
 

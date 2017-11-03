@@ -1,18 +1,8 @@
 const bcrypt = require('bcrypt')
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
-
+const rand = require('./plugin/random')
 const saltFactor = 10
-
-const random = (len) => {
-    len = len || 24
-    let s = ''
-    while(s.length < len) {
-        s += ((Math.random() * Date.now()).toString(36).substr(2))
-            .replace(/[^a-z]*/g, '')
-    }
-    return s.substr(0, len)
-}
 
 var Token = new Schema({
     id: {
@@ -36,7 +26,7 @@ var Token = new Schema({
     secret: {
         type: String,
         required: true,
-        default: random,
+        default: rand.random,
     },
     type: {
         type: String,
@@ -79,6 +69,7 @@ var Token = new Schema({
 })
 
 Token.plugin(require('./plugin/pager'))
+Token.plugin(rand)
 
 Token.pre('save', function(next) {
     var token = this
@@ -137,7 +128,5 @@ Token.methods.merge = function(t) {
 Token.statics.generate = function(sec) {
     return require('bcrypt').hash(sec, saltFactor)
 }
-
-Token.statics.random = random
 
 module.exports = mongoose.model('Token', Token)

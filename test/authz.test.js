@@ -41,29 +41,5 @@ describe('auth service', function () {
                         })
                 })
         })
-
-        it('should enforce ACL', function () {
-            return util.getRaptor()
-                .then((adm) => {
-                    return util.createUserInstance()
-                        .then(function (usr) {
-                            return adm.Auth().sync({
-                                type: 'device',
-                                permission: 'update',
-                                subjectId: 'foo9000',
-                                userId: usr.Auth().getUser().uuid
-                            })
-                                .then(() => {
-                                    return usr.Auth()
-                                        .can('device', 'update', 'foo9000')
-                                        .then((res) => {
-                                            assert.isTrue(res.result)
-                                            return Promise.resolve()
-                                        })
-                                })
-                        })
-                })
-        })
-
     })
 })

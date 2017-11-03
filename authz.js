@@ -151,6 +151,8 @@ const loader = (entity, id) => {
         return api.User.read({ uuid: id })
     case 'token':
         return api.Token.read({ id })
+    case 'client':
+        return api.Client.read({ id })
     /// @TODO
     // case 'device':
     // case 'tree':
