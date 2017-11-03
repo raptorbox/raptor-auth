@@ -1,13 +1,11 @@
 
 const oauth2orize = require('oauth2orize')
-const passport = require('passport')
 const Promise = require('bluebird')
 
 const config = require('./config')
 const api = require('./api')
 
 const User = api.models.User
-const Client = api.models.Client
 const Token = api.models.Token
 const RefreshToken = api.models.RefreshToken
 

@@ -51,7 +51,7 @@ passport.use(new LocalStrategy(function(username, password, done) {
 }))
 
 passport.use(new BearerStrategy(function(t, done) {
-    Token.findOne({ token: t })
+    return Token.findOne({ token: t })
         .then((token) => {
 
             if (!token) {

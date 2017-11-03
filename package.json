@@ -16,6 +16,8 @@
         "bcrypt": "^1.0.3",
         "bluebird": "^3.5.1",
         "body-parser": "^1.18.2",
+        "cache-manager": "^2.5.0",
+        "cache-manager-mongoose": "0.0.4",
         "express": "^4.16.2",
         "express-promise-router": "^2.0.0",
         "mongoose": "^4.12.5",

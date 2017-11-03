@@ -7,6 +7,7 @@ const api = require('./api')
 module.exports.run = () => {
     return Promise.resolve()
         .then(() => Promise.resolve(require('./broker').connect()))
+        .then(() => require('./cache').initialize())
         .then(createDefaultUsers)
         .then(createDefaultRoles)
         .then(createDefaultToken)

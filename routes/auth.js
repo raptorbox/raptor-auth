@@ -1,5 +1,5 @@
-var passport = require('passport')
-var api = require('../api')
+const passport = require('passport')
+const api = require('../api')
 
 module.exports.router = (router) => {
 
