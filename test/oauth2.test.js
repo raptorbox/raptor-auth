@@ -1,6 +1,13 @@
 
 const assert = require('chai').assert
 const util = require('./util')
+const Raptor = require('raptor-sdk')
+
+const createClient = (r) => {
+    return r.Admin().Client().create(util.randomName('client')).then((client) => {
+        return r.Admin().Client().read(client)
+    })
+}
 
 describe('auth service', function () {
 
@@ -16,11 +23,22 @@ describe('auth service', function () {
         it('should create a client', function () {
             return util.getRaptor()
                 .then((adm) => {
-                    return adm.Admin().Client().create({
-                        name: util.randomName('client')
-                    }).then((client) => {
-                        return adm.Admin().Client().read(client)
-                    })
+                    return createClient(adm)
+                })
+        })
+
+        it('should retrieve a token', function () {
+            return util.getRaptor()
+                .then((adm) => {
+                    return createClient(adm)
+                        .then((client) => {
+                            const r = new Raptor({
+                                url: adm.getConfig().url,
+                                clientId: client.id,
+                                clientSecret: client.secret
+                            })
+                            return r.Auth().login()
+                        })
                 })
         })
 

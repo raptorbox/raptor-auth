@@ -1,15 +1,17 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const passport = require('passport')
+
+const BasicStrategy = require('passport-http').BasicStrategy
 const LocalStrategy = require('passport-local').Strategy
 const BearerStrategy = require('passport-http-bearer').Strategy
+const ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy
 
 const errors = require('./errors')
 const logger = require('./logger')
 
 const routes = require('./routes/index')
-const User = require('./models/user')
-const Token = require('./models/token')
+const api = require('./api')
 
 const app = express()
 
@@ -23,21 +25,18 @@ app.get('/swagger.json', function(req, res) {
     res.json(require('./swagger')())
 })
 
-app.post('/oauth/token', require('./oauth2').token)
+app.post('/auth/oauth/access_token', require('./oauth2').token)
 
-// passport config
-passport.use(new LocalStrategy(function(username, password, done) {
-    User.findOne({ username: username }, function (err, user) {
 
+const credentialsLogin = function(username, password, done) {
+    api.models.User.findOne({ username: username }, function (err, user) {
         if (err) {
             return done(err)
         }
-
         if (!user) {
             return done(null, false)
         }
-
-        User.validPassword(password, user.password)
+        api.models.User.validPassword(password, user.password)
             .then((valid) => {
                 if(!valid) {
                     return done(null, false)
@@ -48,10 +47,28 @@ passport.use(new LocalStrategy(function(username, password, done) {
                 done(e, false)
             })
     })
-}))
+}
 
+// passport config
+passport.use(new BasicStrategy(credentialsLogin))
+passport.use(new LocalStrategy(credentialsLogin))
+passport.use(new ClientPasswordStrategy(function(clientId, clientSecret, done) {
+    api.models.Client.findOne({ id: clientId, secret: clientSecret }, function (err, client) {
+        if (err) {
+            return done(err)
+        }
+        if (!client) {
+            return done(null, false)
+        }
+        if (!client.enabled) {
+            return client
+        }
+        return done(null, client)
+    })
+}
+))
 passport.use(new BearerStrategy(function(t, done) {
-    return Token.findOne({ token: t })
+    return api.models.Token.findOne({ token: t })
         .then((token) => {
 
             if (!token) {
@@ -59,13 +76,13 @@ passport.use(new BearerStrategy(function(t, done) {
             }
 
             if (token.isExpired()) {
-                return Token.remove({ _id: token._id })
+                return api.models.Token.remove({ _id: token._id })
                     .then(() => {
                         return Promise.reject(new errors.BadRequest('Token is expired'))
                     })
             }
 
-            return User.findOne({ uuid: token.userId})
+            return api.models.User.findOne({ uuid: token.userId})
                 .then((user) => {
 
                     if(user === null) {
@@ -87,7 +104,7 @@ passport.serializeUser(function(user, done) {
 })
 
 passport.deserializeUser(function(id, done) {
-    User.findById(id)
+    api.models.User.findById(id)
         .then((user) => {
             done(null, user)
         })

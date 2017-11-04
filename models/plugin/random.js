@@ -1,7 +1,7 @@
 
 
 const random = (len) => {
-    len = len || 24
+    len = len || 36
     let s = ''
     while(s.length < len) {
         s += ((Math.random() * Date.now()).toString(36).substr(2))
