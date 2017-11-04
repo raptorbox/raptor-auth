@@ -98,6 +98,7 @@ server.exchange(oauth2orize.exchange.clientCredentials(function(client, scope, d
                 Token.remove({ userId: client.userId, clientId: client.id })
             ])
         }).then(() => {
+
             const token = new Token({
                 name: 'at',
                 clientId: client.id,
@@ -112,7 +113,6 @@ server.exchange(oauth2orize.exchange.clientCredentials(function(client, scope, d
             })
 
             return refreshToken.save().then(() => {
-                const info = { scope: '*' }
                 return token.save().then(() => {
                     done(null, token.token, refreshToken.token, { 'expires_in': config.oauth2.ttl })
                     return Promise.resolve()
@@ -159,7 +159,6 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
                 })
 
                 return refreshToken.save().then(() => {
-                    var info = { scope: '*' }
                     return token.save(function () {
                         done(null, token.token, refreshToken, { 'expires_in': config.oauth2.ttl })
                     })
