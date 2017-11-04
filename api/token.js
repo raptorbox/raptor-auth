@@ -12,10 +12,8 @@ const notify = (op, token) => {
 
 l.createLogin = (user) => {
     const t1 = Date.now()
-    const sec = user.password.substr(7, 21) + Math.floor(Math.random()*t1)
     return l.create({
         name: 'login_'+t1,
-        secret: sec,
         type: 'login',
         userId: user.uuid,
     })

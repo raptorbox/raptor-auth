@@ -27,46 +27,58 @@ app.get('/swagger.json', function(req, res) {
 
 app.post('/auth/oauth/access_token', require('./oauth2').token)
 
-
 const credentialsLogin = function(username, password, done) {
-    api.models.User.findOne({ username: username }, function (err, user) {
-        if (err) {
-            return done(err)
-        }
-        if (!user) {
-            return done(null, false)
-        }
-        api.models.User.validPassword(password, user.password)
-            .then((valid) => {
-                if(!valid) {
-                    return done(null, false)
-                }
-                done(null, user)
-            })
-            .catch((e) => {
-                done(e, false)
-            })
-    })
+    api.models.User.findOne({ username: username })
+        .then((user) => {
+            if(!user) {
+                done(null, false)
+                return Promise.resolve()
+            }
+            return api.models.User.validPassword(password, user.password)
+                .then((valid) => {
+                    if(!valid) {
+                        done(null, false)
+                        return Promise.resolve()
+                    }
+                    done(null, user)
+                    return Promise.resolve()
+                })
+        })
+        .catch((e) => done(e))
 }
 
 // passport config
-passport.use(new BasicStrategy(credentialsLogin))
+passport.use('client_password', new ClientPasswordStrategy(function(clientId, clientSecret, done) {
+    api.models.Client.findOne({ id: clientId, secret: clientSecret })
+        .then((client) => {
+            if (!client) {
+                return done(null, false)
+            }
+            if (!client.enabled) {
+                return done(null, false)
+            }
+            return done(null, client)
+        })
+        .catch((e) => done(e))
+
+}))
+
+passport.use('client_basic', new BasicStrategy(function(username, password, done) {
+    api.models.Client.findOne({ id: username, secret: password })
+        .then((client) => {
+            if(!client) {
+                done(null, false)
+                return Promise.resolve()
+            }
+            if(!client.enabled) {
+                done(null, false)
+                return Promise.resolve()
+            }
+            done(null, client)
+        })
+}))
 passport.use(new LocalStrategy(credentialsLogin))
-passport.use(new ClientPasswordStrategy(function(clientId, clientSecret, done) {
-    api.models.Client.findOne({ id: clientId, secret: clientSecret }, function (err, client) {
-        if (err) {
-            return done(err)
-        }
-        if (!client) {
-            return done(null, false)
-        }
-        if (!client.enabled) {
-            return client
-        }
-        return done(null, client)
-    })
-}
-))
+
 passport.use(new BearerStrategy(function(t, done) {
     return api.models.Token.findOne({ token: t })
         .then((token) => {

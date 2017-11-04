@@ -1,8 +1,6 @@
-const bcrypt = require('bcrypt')
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 const rand = require('./plugin/random')
-const saltFactor = 10
 
 var Token = new Schema({
     id: {
@@ -26,7 +24,6 @@ var Token = new Schema({
     secret: {
         type: String,
         required: true,
-        default: rand.random,
     },
     type: {
         type: String,
@@ -69,25 +66,8 @@ var Token = new Schema({
 })
 
 Token.plugin(require('./plugin/pager'))
+Token.plugin(require('./plugin/token'))
 Token.plugin(rand)
-
-Token.pre('save', function(next) {
-    var token = this
-
-    // only hash the password if it has been modified (or is new)
-    if (!token.isModified('secret')) {
-        return next()
-    }
-
-    bcrypt.hash(token.secret, saltFactor)
-        .then((hash) => {
-            token.token = hash
-            next()
-        })
-        .catch((e) => {
-            next(e)
-        })
-})
 
 Token.methods.isOwner = function(user) {
     return this.userId === user.uuid
@@ -123,10 +103,6 @@ Token.methods.merge = function(t) {
             return Promise.resolve()
         })
         .then(() => Promise.resolve(token))
-}
-
-Token.statics.generate = function(sec) {
-    return require('bcrypt').hash(sec, saltFactor)
 }
 
 module.exports = mongoose.model('Token', Token)

@@ -6,6 +6,7 @@ const Promise = require('bluebird')
 
 const config = require('./config')
 const api = require('./api')
+const logger = require('./logger')
 
 const Client = api.models.Client
 const User = api.models.User
@@ -47,43 +48,37 @@ server.exchange(oauth2orize.exchange.password(function(client, username, passwor
                     Token.remove({ userId: user.uuid, clientId: client.id })
                 ])
             }).then(() => {
-                return Promise.all([Token.generate(), Token.generate()]).then((tks) => {
 
-                    const tokenValue = tks[0]
-                    const refreshTokenValue = tks[1]
+                const token = new Token({
+                    name: 'at',
+                    clientId: client.id,
+                    userId: user.uuid,
+                    type: 'oauth2',
+                    expires: Date.now() + (config.oauth2.ttl*1000)
+                })
 
-                    const token = new Token({
-                        token: tokenValue,
-                        clientId: client.id,
-                        userId: user.uuid,
-                        type: 'oauth2',
-                        expires: Date.now() + (config.oauth2.ttl*1000)
-                    })
+                const refreshToken = new RefreshToken({
+                    clientId: client.id,
+                    userId: user.uuid
+                })
 
-                    const refreshToken = new RefreshToken({
-                        token: refreshTokenValue,
-                        clientId: client.id,
-                        userId: user.uuid
-                    })
-
-                    return refreshToken.save().then(() => {
-                        const info = { scope: '*' }
-                        return token.save().then(() => {
-                            done(null, tokenValue, refreshTokenValue, { 'expires_in': config.oauth2.ttl })
-                            return Promise.resolve()
-                        })
+                return refreshToken.save().then(() => {
+                    const info = { scope: '*' }
+                    return token.save().then(() => {
+                        done(null, token.token, refreshToken.token, { 'expires_in': config.oauth2.ttl })
+                        return Promise.resolve()
                     })
                 })
             })
         })
         .catch((e) => {
+            logger.warn('Password exchange error: %s', e.message)
+            logger.debug(e.stack)
             done(e)
         })
 }))
 
 server.exchange(oauth2orize.exchange.clientCredentials(function(client, scope, done) {
-
-    console.warn('**************************', client)
 
     if(!client) return done(null, false)
 
@@ -98,42 +93,30 @@ server.exchange(oauth2orize.exchange.clientCredentials(function(client, scope, d
                 return done(null, false)
             }
 
-            return Client.findOne({ uuid: client.userId }).then((user) => {
-                if(!user.enabled) {
-                    return done(null, false)
-                }
-                return Promise.resolve(user)
-            }).then((user) => {
-                return Promise.all([Token.generate(), Token.generate()]).then((tks) => {
+            const token = new Token({
+                name: 'at',
+                clientId: client.id,
+                userId: client.userId,
+                type: 'oauth2',
+                expires: Date.now() + (config.oauth2.ttl*1000)
+            })
 
-                    const tokenValue = tks[0]
-                    const refreshTokenValue = tks[1]
+            const refreshToken = new RefreshToken({
+                clientId: client.id,
+                userId: client.userId
+            })
 
-                    const token = new Token({
-                        token: tokenValue,
-                        clientId: client.id,
-                        userId: user.uuid,
-                        type: 'oauth2',
-                        expires: Date.now() + (config.oauth2.ttl*1000)
-                    })
-
-                    const refreshToken = new RefreshToken({
-                        token: refreshTokenValue,
-                        clientId: client.id,
-                        userId: user.uuid
-                    })
-
-                    return refreshToken.save().then(() => {
-                        const info = { scope: '*' }
-                        return token.save().then(() => {
-                            done(null, tokenValue, refreshTokenValue, { 'expires_in': config.oauth2.ttl })
-                            return Promise.resolve()
-                        })
-                    })
+            return refreshToken.save().then(() => {
+                const info = { scope: '*' }
+                return token.save().then(() => {
+                    done(null, token.token, refreshToken.token, { 'expires_in': config.oauth2.ttl })
+                    return Promise.resolve()
                 })
             })
         })
         .catch((e) => {
+            logger.warn('Client credentials exchange error %s', e.message)
+            logger.debug(e.stack)
             done(e)
         })
 }))
@@ -190,7 +173,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
 
 // token endpoint
 module.exports.token = [
-    passport.authenticate(['basic', 'oauth2-client-password'], { session: false }),
+    passport.authenticate(['client_basic', 'client_password'], { session: false }),
     server.token(),
     server.errorHandler()
 ]
