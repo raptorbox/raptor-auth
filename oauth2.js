@@ -93,6 +93,11 @@ server.exchange(oauth2orize.exchange.clientCredentials(function(client, scope, d
                 return done(null, false)
             }
 
+            return Promise.all([
+                RefreshToken.remove({ userId: client.userId, clientId: client.id }),
+                Token.remove({ userId: client.userId, clientId: client.id })
+            ])
+        }).then(() => {
             const token = new Token({
                 name: 'at',
                 clientId: client.id,
@@ -130,7 +135,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
             return Promise.resolve()
         }
 
-        return User.findBy({ uuid: token.userId }).then((user) => {
+        return api.models.User.findOne({ uuid: token.userId }).then((user) => {
 
             if (!user) {
                 done(null, false)
@@ -141,28 +146,22 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
                 RefreshToken.remove({ userId: user.uuid, clientId: client.id }),
                 Token.remove({ userId: user.uuid, clientId: client.id })
             ]).then(() => {
-                return Promise.all([Token.generate(), Token.generate()]).then((tks) => {
 
-                    const tokenValue = tks[0]
-                    const refreshTokenValue = tks[1]
+                const token = new Token({
+                    name: 'at',
+                    clientId: client.id,
+                    userId: user.uuid
+                })
 
-                    const token = new Token({
-                        token: tokenValue,
-                        clientId: client.id,
-                        userId: user.uuid
-                    })
+                const refreshToken = new RefreshToken({
+                    clientId: client.id,
+                    userId: user.uuid
+                })
 
-                    const refreshToken = new RefreshToken({
-                        token: refreshTokenValue,
-                        clientId: client.id,
-                        userId: user.uuid
-                    })
-
-                    return refreshToken.save().then(() => {
-                        var info = { scope: '*' }
-                        return token.save(function () {
-                            done(null, tokenValue, refreshTokenValue, { 'expires_in': config.oauth2.ttl })
-                        })
+                return refreshToken.save().then(() => {
+                    var info = { scope: '*' }
+                    return token.save(function () {
+                        done(null, token.token, refreshToken, { 'expires_in': config.oauth2.ttl })
                     })
                 })
             })

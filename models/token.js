@@ -1,12 +1,13 @@
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 const rand = require('./plugin/random')
+const config = require('../config')
 
 var Token = new Schema({
     id: {
         type: String,
         index: true,
-        required: true,
+        required: false,
         unique: true,
         default: require('uuid/v4')
     },
@@ -37,11 +38,11 @@ var Token = new Schema({
     },
     expires: {
         type: Date,
+        required: false,
         // +30 min
         default: function() {
-            return (new Date()).getTime() + (30 * (60 * 60 * 1000))
-        },
-        required: false
+            return (Date.now() + (config.oauth2.ttl * 1000))
+        }
     },
     userId: {
         type: String,

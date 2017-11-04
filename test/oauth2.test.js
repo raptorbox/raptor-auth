@@ -42,6 +42,24 @@ describe('auth service', function () {
                 })
         })
 
+        it('should refresh a token', function () {
+            return util.getRaptor()
+                .then((adm) => {
+                    return createClient(adm)
+                        .then((client) => {
+                            const r = new Raptor({
+                                url: adm.getConfig().url,
+                                clientId: client.id,
+                                clientSecret: client.secret
+                            })
+                            return r.Auth().login()
+                                .then(() => {
+                                    return r.Auth().refreshToken()
+                                })
+                        })
+                })
+        })
+
         it('should update a client', function () {
             return util.getRaptor()
                 .then((adm) => {
