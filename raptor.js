@@ -10,7 +10,7 @@ module.exports.initialize = () => {
 
     raptor = new Raptor({
         url: config.url,
-        token: config.token,
+        token: config.token.token,
     })
     raptor.Auth().setUser(config.service)
 

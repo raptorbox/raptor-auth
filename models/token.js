@@ -89,6 +89,9 @@ Token.methods.isOwner = function(user) {
 }
 
 Token.methods.isExpired = function() {
+    if(this.expires === null || this.expires === 0) {
+        return false
+    }
     return Date.now() > this.expires
 }
 

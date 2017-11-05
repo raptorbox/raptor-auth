@@ -53,14 +53,16 @@ module.exports.router = (router) => {
     })
 
     router.post('/check', bearerAuth(), function(req, res) {
-        return require('../authz').can(req.body)
+        const body = Object.assign({}, req.body)
+        body.subjectId = body.subjectId || body.objectId
+        return require('../authz').can(body)
             .then(() => res.json({
                 result: true
             }))
-            .catch((e) => res.json({
+            .catch(() => res.json({
                 result: false,
-                code: e.code,
-                message: e.message,
+                // code: e.code,
+                // message: e.message,
             }))
     })
 

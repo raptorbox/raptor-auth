@@ -81,7 +81,6 @@ passport.use(new LocalStrategy(credentialsLogin))
 passport.use(new BearerStrategy(function(t, done) {
     return api.models.Token.findOne({ token: t })
         .then((token) => {
-
             if (!token) {
                 return done(null, false)
             }

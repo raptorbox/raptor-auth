@@ -4,6 +4,7 @@ const logger = require('./logger')
 const api = require('./api')
 
 const can = (req) => {
+
     let p
     if (req.user) {
         p = Promise.resolve(req.user)
@@ -22,10 +23,15 @@ const can = (req) => {
             return Promise.resolve()
         }
 
-        let p1 = Promise.resolve(req.subject)
-
-        if(req.subjectId) {
-            p1 = loader(req.type, req.subjectId)
+        let p1
+        if(req.subject) {
+            p1 = Promise.resolve(req.subject)
+        } else {
+            if(req.subjectId) {
+                p1 = loader(req.type, req.subjectId)
+            } else {
+                p1 = Promise.resolve(null)
+            }
         }
 
         return p1.then((subject) => {
@@ -78,11 +84,12 @@ const can = (req) => {
 
                     if(subject) {
 
-                        if(subject.isOwner && subject.isOwner(user)) {
+                        if(isOwner(req.type, subject, user)) {
                             if(has('admin_own')) {
                                 return Promise.resolve()
                             }
                             if(req.type) {
+
                                 //admin_own_device
                                 if(has('admin_own_' + req.type)) {
                                     return Promise.resolve()
@@ -170,6 +177,23 @@ const check = (options) => {
         })
             .then(()=> next())
             .catch((e)=> next(e))
+    }
+}
+
+const isOwner = (type, subject, user) => {
+    switch (type) {
+    case 'user':
+        return subject.uuid === user.uuid
+    case 'role':
+        return false
+    case 'token':
+    case 'client':
+    case 'device':
+    case 'tree':
+    case 'app':
+        return subject.userId === user.uuid
+    default:
+        return null
     }
 }
 
