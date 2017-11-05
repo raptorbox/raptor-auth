@@ -135,7 +135,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
             return Promise.resolve()
         }
 
-        return api.models.User.findOne({ uuid: token.userId }).then((user) => {
+        return api.models.User.findOne({ uuid: token.userId, enabled: true }).then((user) => {
 
             if (!user) {
                 done(null, false)
