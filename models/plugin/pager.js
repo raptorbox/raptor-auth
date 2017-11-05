@@ -25,7 +25,7 @@ module.exports = function (schema, options) {
         const page = Math.max(0, paging.page - 1) // using a zero-based page index for use with skip()
         const size = paging.size || 50
 
-        let sort = paging.sort || { '_id': 1 }
+        let sort = paging.sort || {}
         if(typeof sort === 'string') {
             let s = {}
             s[sort] = 1
@@ -45,7 +45,7 @@ module.exports = function (schema, options) {
                             page: page,
                             size: size,
                             sort: sort,
-                            content: records
+                            content: records.map((r) => new M(r))
                         })
                     })
             })

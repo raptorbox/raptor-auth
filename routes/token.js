@@ -35,24 +35,36 @@ module.exports.router = (router) => {
      *         token:
      *           type: string
      */
-
     router.get('/', function(req, res) {
-        return api.Token.list({}, req.params)
+        const q = {
+            type: 'DEFAULT'
+        }
+        let uuid = null
+        if(req.query.uuid) {
+            uuid = req.query.uuid
+            delete req.query.uuid
+        }
+        if(!req.user.isAdmin()) {
+            uuid = req.user.uuid
+        }
+        if(uuid) {
+            q.userId = uuid
+        }
+        return api.Token.list(q, req.query)
             .then((tokens) => {
-                logger.debug('Found %s tokens', tokens.length)
+                logger.debug('Found %s tokens', tokens.content.length)
                 res.json(tokens)
             })
     })
 
     router.post('/', function(req, res) {
-
         const raw = Object.assign({}, req.body)
         if(!raw.userId) {
             raw.userId = req.user.uuid
         }
         return api.Token.create(raw)
             .then((token) => {
-                logger.debug('Created token %s', token.name)
+                logger.debug('Created token %s [type=%s expires=%s]', token.name, token.type, token.expires)
                 res.json(token)
             })
     })
@@ -77,6 +89,11 @@ module.exports.router = (router) => {
             })
     })
 
+
+    router.get('/current', function(req, res) {
+        res.json(req.authInfo.token)
+    })
+
     router.get('/:id', function(req, res) {
         return api.Token.read({ id: req.params.id })
             .then((token) => {
@@ -84,7 +101,4 @@ module.exports.router = (router) => {
             })
     })
 
-    router.get('/current', function(req, res) {
-        res.json(req.authInfo.token)
-    })
 }

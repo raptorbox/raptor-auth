@@ -2,6 +2,7 @@ var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 const rand = require('./plugin/random')
 const config = require('../config')
+const uuidv4 = require('uuid/v4')
 
 var Token = new Schema({
     id: {
@@ -9,7 +10,7 @@ var Token = new Schema({
         index: true,
         required: false,
         unique: true,
-        default: require('uuid/v4')
+        default: uuidv4
     },
     name: {
         type: String,
@@ -30,6 +31,7 @@ var Token = new Schema({
         type: String,
         required: false,
         index: true,
+        default: 'DEFAULT'
     },
     enabled: {
         type: Boolean,
@@ -41,7 +43,17 @@ var Token = new Schema({
         required: false,
         // +30 min
         default: function() {
-            return (Date.now() + (config.oauth2.ttl * 1000))
+            return new Date(Date.now() + (config.oauth2.ttl * 1000))
+        },
+        set: function(expires) {
+            if(expires === 0) {
+                expires = null
+            } else {
+                if(!(expires instanceof Date)) {
+                    expires = new Date(expires * 1000)
+                }
+            }
+            return expires
         }
     },
     userId: {
@@ -61,7 +73,9 @@ var Token = new Schema({
         transform: function (doc, ret) {
             delete ret._id
             delete ret.__v
-            delete ret.type
+            if(ret.expires) {
+                ret.expires = Math.round((new Date(ret.expires).getTime() / 1000)+1) //add 1sec
+            }
         }
     }
 })
@@ -93,7 +107,9 @@ Token.methods.merge = function(t) {
                 if(t.expires === 0) {
                     t.expires = null
                 } else {
-                    token.expires = new Date(t.expires * 1000)
+                    if(!(token.expires instanceof Date)) {
+                        token.expires = new Date(t.expires * 1000)
+                    }
                 }
             }
 
@@ -105,5 +121,15 @@ Token.methods.merge = function(t) {
         })
         .then(() => Promise.resolve(token))
 }
+
+Token.pre('save', function(next) {
+    if(!this.id) {
+        this.id = uuidv4()
+    }
+    if(this.type) {
+        this.type = this.type.toUpperCase()
+    }
+    next()
+})
 
 module.exports = mongoose.model('Token', Token)

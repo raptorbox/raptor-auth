@@ -4,24 +4,28 @@ const logger = require('./logger')
 const api = require('./api')
 
 const can = (req) => {
-
-    let p = Promise.resolve(req.user)
-    if(req.userId) {
-        p = api.User.read({ uuid: req.userId })
+    let p
+    if (req.user) {
+        p = Promise.resolve(req.user)
+    } else {
+        if(req.userId) {
+            p = loader('user', req.userId)
+        } else {
+            p = Promise.reject(new errors.NotFound('Missing user'))
+        }
     }
 
     return p.then((user) => {
 
+        // service role
+        if(user.isService()) {
+            return Promise.resolve()
+        }
+
         let p1 = Promise.resolve(req.subject)
-        if(req.userId) {
-            p1 = loader(req.type, req.objectId || req.subjectId)
-                .catch((e) => {
-                    if (e instanceof errors.BadRequest) {
-                        // TODO: review this on impl is complete
-                        return Promise.resolve(null)
-                    }
-                    return Promise.reject(e)
-                })
+
+        if(req.subjectId) {
+            p1 = loader(req.type, req.subjectId)
         }
 
         return p1.then((subject) => {
@@ -39,14 +43,14 @@ const can = (req) => {
                         return hasPerm
                     }
 
-                    logger.debug('Check %s_%s[%s] for %s in permissions %j',
+                    logger.debug('Check %s_%s [id=%s] for %s in permissions %j',
                         req.type,
                         req.permission,
-                        req.subjectId,
-                        req.userId,
+                        req.subjectId || '',
+                        user.uuid,
                         permissions)
 
-                    if(has('admin')) {
+                    if(has('admin') || has('service')) {
                         return Promise.resolve()
                     }
 
@@ -55,6 +59,19 @@ const can = (req) => {
                             return Promise.resolve()
                         }
                         if(has(req.permission + '_' + req.type)) {
+                            return Promise.resolve()
+                        }
+                    }
+
+                    // allow create on admin_own*
+                    if( !subject && (
+                        req.permission === 'create' ||
+                        req.permission === 'read' // list
+                    )) {
+                        if(has('admin_own')) {
+                            return Promise.resolve()
+                        }
+                        if(has('admin_own_' + req.type)) {
                             return Promise.resolve()
                         }
                     }
@@ -86,15 +103,13 @@ const can = (req) => {
                     q.permission = { $in: [ q.permission, 'admin' ] }
                     return api.models.Acl.find(req)
                         .then((acls) => {
-
                             if(acls.filter((acl) => acl.allowed).length) {
                                 return Promise.resolve()
                             }
-
                             return Promise.reject(new errors.Forbidden())
                         })
                         .catch((e) => {
-                            logger.debug('User %s not allowed to %s on %s', user.username, req.permission, req.type)
+                            logger.debug('User `%s` not allowed to `%s` on `%s`', user.username, req.permission, req.type)
                             return Promise.reject(e)
                         })
                 })
@@ -109,6 +124,10 @@ const check = (options) => {
     options.type = options.type || ''
 
     return (req, res, next) => {
+
+        if(req.isAuthorized) {
+            return next()
+        }
 
         if (options.permission === null) {
             switch (req.method.toLowerCase()) {
@@ -129,7 +148,16 @@ const check = (options) => {
             }
         }
 
-        logger.debug('Check authorization for `%s` to `%s` on `%s`', req.user.username, options.permission, options.type)
+        if(options.subjectId == null) {
+            options.subjectId = getRequestEntityId(options.type, req)
+        }
+
+        logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s]',
+            req.user.username,
+            options.permission,
+            options.type,
+            options.subjectId || ''
+        )
 
         if(!req.user) {
             return new errors.Unauthorized()
@@ -145,17 +173,39 @@ const check = (options) => {
     }
 }
 
-const loader = (entity, id) => {
-    switch (entity) {
+const getRequestEntityId = (type, req) => {
+    switch (type) {
+    case 'user':
+        return req.params.userId
+    case 'token':
+        return req.params.id
+    case 'role':
+        return req.params.id
+    case 'client':
+        return req.params.clientId
+    default:
+        return null
+    }
+}
+
+const loader = (type, id) => {
+
+    logger.debug('Loading `%s` [id=%s]', type, id)
+
+    const sdk = require('./raptor').client()
+    switch (type) {
     case 'user':
         return api.User.read({ uuid: id })
     case 'token':
         return api.Token.read({ id })
+    case 'role':
+        return api.Role.read({ id })
     case 'client':
         return api.Client.read({ id })
-    /// @TODO
-    // case 'device':
-    // case 'tree':
+    case 'device':
+        return sdk.Inventory().read({ id })
+    case 'tree':
+        return sdk.Tree().read({ id })
     // case 'app':
     default:
         return Promise.reject(new errors.BadRequest())

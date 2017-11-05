@@ -7,7 +7,11 @@ const logger = require('./logger')
 let client
 
 l.connect = () => {
-    client = mqtt.connect(config.broker)
+
+    client = mqtt.connect(config.broker, {
+        username: config.users.service.username,
+        password: config.users.service.password,
+    })
     client.on('close', function() {
         // logger.debug('MQTT disconnected')
     })
@@ -24,7 +28,14 @@ l.publish = (topic, msg) => {
 }
 
 l.send = (msg) => {
-    client && client.publish(`${msg.type}/${msg.id}`, msg)
+    let json = msg
+    if(msg.toJSON) {
+        json = msg.toJSON()
+    }
+    if(typeof json === 'object') {
+        json = JSON.stringify(json)
+    }
+    client && l.publish(`${msg.type}/${msg.id}`, json)
 }
 
 l.close = () => {

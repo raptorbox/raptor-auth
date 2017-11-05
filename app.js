@@ -157,16 +157,33 @@ app.use(function(err, req, res, next) {
         err = new errors.Unauthorized()
     }
 
-    if(!(err instanceof errors.BaseError)) {
-        logger.error(err)
+    const AuthenticationError = require('passport/lib/errors/authenticationerror')
+
+    if(err instanceof AuthenticationError) {
+        err = new errors.Unauthorized()
     }
 
-    err.code = err.code || 500
-    res.status(err.code)
-    res.json({
-        message: err.message,
-        code: err.code,
-    })
+    if(err instanceof errors.HttpError) {
+        res.status(err.code)
+        res.json(err.toJSON())
+        return
+    }
+
+    if(err.code && (err.code >= 400 && err.code <= 510)) {
+        res.status(err.code)
+        res.json({
+            code: err.code,
+            message: err.message
+        })
+        return
+    }
+
+    logger.error('Error: %s', err.message)
+    logger.debug(err.stack)
+
+    const internalError = new errors.InternalServer()
+    res.status(internalError.code)
+    res.json(internalError.toJSON())
 })
 
 module.exports = app

@@ -11,12 +11,19 @@ module.exports.run = () => {
         .then(createDefaultUsers)
         .then(createDefaultRoles)
         .then(createDefaultToken)
+        .then(require('./raptor').initialize)
 }
 
 const createDefaultUsers = () => {
     return Promise.all(Object.keys(config.users).map((k) => config.users[k]))
         .each((u) => api.User.save(u))
-        .then(() => {
+        .then((u) => {
+
+            // store service user service as config
+            if (u.username === config.users.service.username) {
+                config.service = u
+            }
+
             logger.debug('Stored default users')
             return Promise.resolve()
         })
@@ -42,13 +49,17 @@ const createDefaultToken = () => {
                         return Promise.resolve(token)
                     }
                     const t = new api.models.Token({
-                        name: 'service-default',
-                        secret: (Math.random() * Date.now()),
+                        name: config.serviceToken,
                         expires: 0,
                         enabled: true,
                         userId: u.uuid
                     })
-                    return api.Token.create(t)
+                    return t.save()
                 })
+        })
+        .then((token) => {
+            config.token = token
+            logger.debug('Created token `%s` [type=%s expires=%s]', token.name, token.type, token.expires)
+            return Promise.resolve()
         })
 }

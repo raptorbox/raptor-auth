@@ -14,7 +14,7 @@ l.createLogin = (user) => {
     const t1 = Date.now()
     return l.create({
         name: 'login_'+t1,
-        type: 'login',
+        type: 'LOGIN',
         userId: user.uuid,
     })
 }

@@ -30,6 +30,20 @@ describe('auth service', function () {
                 })
         })
 
+        it('should list tokens', function () {
+            return util.getRaptor()
+                .then(function (r) {
+                    const t = newToken()
+                    return r.Admin().Token().create(t)
+                        .then((token) => r.Admin().Token().read(token)
+                            .then(() => r.Admin().Token().list())
+                            .then((tokens) => {
+                                assert.isTrue(tokens.getContent().length > 0)
+                                return Promise.resolve()
+                            }))
+                })
+        })
+
         it('should update a token', function () {
             return util.getRaptor()
                 .then(function (r) {
