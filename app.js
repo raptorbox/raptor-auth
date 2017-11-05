@@ -78,7 +78,6 @@ passport.use('client_basic', new BasicStrategy(function(username, password, done
         })
 }))
 passport.use(new LocalStrategy(credentialsLogin))
-
 passport.use(new BearerStrategy(function(t, done) {
     return api.models.Token.findOne({ token: t })
         .then((token) => {
@@ -86,11 +85,10 @@ passport.use(new BearerStrategy(function(t, done) {
             if (!token) {
                 return done(null, false)
             }
-
             if (token.isExpired()) {
                 return api.models.Token.remove({ _id: token._id })
                     .then(() => {
-                        return Promise.reject(new errors.BadRequest('Token is expired'))
+                        return Promise.reject(new errors.Unauthorized('Token is expired'))
                     })
             }
 

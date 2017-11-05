@@ -1,5 +1,6 @@
 const passport = require('passport')
 const api = require('../api')
+const logger = require('../logger')
 
 module.exports.router = (router) => {
 
@@ -10,9 +11,12 @@ module.exports.router = (router) => {
         })
     }
 
-    router.post('/login', passport.authenticate('local'), function(req, res) {
+    router.post('/login', passport.authenticate('local', {
+        failWithError: true, session: false
+    }), function(req, res) {
         return api.Token.createLogin(req.user)
             .then((t) => {
+                logger.debug('Logged in %s', req.body.username)
                 res.json({
                     token: t.token,
                     expires: Math.round(t.expires / 1000),
@@ -38,7 +42,7 @@ module.exports.router = (router) => {
             .then((t) => {
                 res.json({
                     token: t.token,
-                    expires: t.expires
+                    expires: Math.round(t.expires / 1000)
                 })
             })
     })
