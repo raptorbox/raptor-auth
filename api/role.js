@@ -10,10 +10,18 @@ const notify = (op, role) => {
 }
 
 l.save = (r) => {
-    return Role.findOne({
-        name: r.name,
-        domain: r.domain || null
-    })
+    let q
+    if (r.id) {
+        q = {
+            id: r.id
+        }
+    } else {
+        q = {
+            name: r.name,
+            domain: r.domain || null
+        }
+    }
+    return Role.findOne(q)
         .then((role) => {
             const exists = role
             if(!exists) {

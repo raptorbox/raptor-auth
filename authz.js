@@ -60,15 +60,6 @@ const can = (req) => {
                         return Promise.resolve()
                     }
 
-                    if(req.type) {
-                        if(has('admin_' + req.type)) {
-                            return Promise.resolve()
-                        }
-                        if(has(req.permission + '_' + req.type)) {
-                            return Promise.resolve()
-                        }
-                    }
-
                     // allow create on admin_own*
                     if( !subject && (
                         req.permission === 'create' ||
@@ -77,19 +68,26 @@ const can = (req) => {
                         if(has('admin_own')) {
                             return Promise.resolve()
                         }
-                        if(has('admin_own_' + req.type)) {
+                        if(req.type && has('admin_own_' + req.type)) {
+                            return Promise.resolve()
+                        }
+                    }
+
+                    if(req.type) {
+                        if(has(`admin_${req.type}`)) {
+                            return Promise.resolve()
+                        }
+                        if(has(`${req.permission}_${req.type}`)) {
                             return Promise.resolve()
                         }
                     }
 
                     if(subject) {
-
                         if(isOwner(req.type, subject, user)) {
                             if(has('admin_own')) {
                                 return Promise.resolve()
                             }
                             if(req.type) {
-
                                 //admin_own_device
                                 if(has('admin_own_' + req.type)) {
                                     return Promise.resolve()
@@ -124,13 +122,15 @@ const can = (req) => {
     })
 }
 
-const check = (options) => {
+const check = (opts) => {
 
-    options = options || {}
-    options.permission = options.permission || null
-    options.type = options.type || ''
+    opts = opts || {}
+    opts.permission = opts.permission || null
+    opts.type = opts.type || ''
 
     return (req, res, next) => {
+
+        const options = Object.assign({}, opts)
 
         if(req.isAuthorized) {
             return next()
@@ -183,6 +183,7 @@ const check = (options) => {
 const isOwner = (type, subject, user) => {
     switch (type) {
     case 'user':
+    case 'profile':
         return subject.uuid === user.uuid
     case 'role':
         return false
@@ -219,6 +220,7 @@ const loader = (type, id) => {
     const sdk = require('./raptor').client()
     switch (type) {
     case 'user':
+    case 'profile':
         return api.User.read({ uuid: id })
     case 'token':
         return api.Token.read({ id })

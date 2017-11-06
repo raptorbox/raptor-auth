@@ -1,13 +1,21 @@
 var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 
+const uuidv4 = require('uuid/v4')
+
 var Role = new Schema({
     id: {
         type: String,
         index: true,
         required: true,
         unique: true,
-        default: require('uuid/v4')
+        default: uuidv4,
+        set: function(v) {
+            if(!v) {
+                v = uuidv4()
+            }
+            return v
+        }
     },
     name: {
         type: String,

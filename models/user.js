@@ -77,7 +77,9 @@ User.methods.isOwner = function(user) {
 }
 
 User.methods.merge = function(u) {
+
     const user = this
+    const model= this.model('User')
 
     return Promise.resolve()
         .then(() => {
@@ -104,7 +106,7 @@ User.methods.merge = function(u) {
             if(u.username === user.username) {
                 return Promise.resolve()
             }
-            return user.findOne({ username: u.username })
+            return model.findOne({ username: u.username })
                 .then((user2) => {
                     if(user2) {
                         return Promise.reject(new errors.BadRequest('Username already taken'))
@@ -118,7 +120,7 @@ User.methods.merge = function(u) {
             if(u.email === user.email) {
                 return Promise.resolve()
             }
-            return user.findOne({ email: u.email })
+            return model.findOne({ email: u.email })
                 .then((user2) => {
                     if(user2) {
                         return Promise.reject(new errors.BadRequest('Email already registered'))

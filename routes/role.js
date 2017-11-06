@@ -22,20 +22,19 @@ module.exports.router = (router) => {
      */
 
     router.get('/', function(req, res) {
-        return api.Role.list({ domain: null }, req.params)
+        const q = {}
+        return api.Role.list(q, req.query)
             .then((roles) => {
-                logger.debug('Found %s roles', roles.length)
+                logger.debug('Found %s roles', roles.content.length)
                 res.json(roles)
             })
     })
 
     const save = (req, res) => {
-
         const r = Object.assign({}, req.body)
         if(req.params.id) {
             r.id = req.params.id
         }
-
         return api.Role.save(r)
             .then((role) => {
                 logger.debug('Saved role %s [permissions=%j]', role.name, role.permissions)
@@ -51,7 +50,7 @@ module.exports.router = (router) => {
     })
 
     router.delete('/:id', function(req, res) {
-        return api.Role.delete({ name: req.params.id })
+        return api.Role.delete({ id: req.params.id })
             .then(() => {
                 logger.debug('Deleted role %s', req.params.id)
                 res.status(202).send()
@@ -59,7 +58,7 @@ module.exports.router = (router) => {
     })
 
     router.get('/:role', function(req, res) {
-        return api.Role.read({ name: req.params.role })
+        return api.Role.read({ id: req.params.role })
             .then((role) => {
                 res.json(role)
             })
