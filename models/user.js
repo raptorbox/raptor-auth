@@ -114,6 +114,19 @@ User.methods.merge = function(u) {
                     return Promise.resolve()
                 })
         })
+        .then(() => {
+            if(u.email === user.email) {
+                return Promise.resolve()
+            }
+            return user.findOne({ email: u.email })
+                .then((user2) => {
+                    if(user2) {
+                        return Promise.reject(new errors.BadRequest('Email already registered'))
+                    }
+                    user.email = u.email
+                    return Promise.resolve()
+                })
+        })
         .then(() => Promise.resolve(user))
 }
 

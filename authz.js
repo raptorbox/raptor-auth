@@ -230,7 +230,8 @@ const loader = (type, id) => {
         return sdk.Inventory().read({ id })
     case 'tree':
         return sdk.Tree().read({ id })
-    // case 'app':
+    case 'app':
+        return sdk.App().read({ id })
     default:
         return Promise.reject(new errors.BadRequest())
     }
