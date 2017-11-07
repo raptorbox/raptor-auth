@@ -120,6 +120,11 @@ const can = (req) => {
                 })
         })
     })
+        .catch((e) => {
+            logger.warn('Check failed: %s', e.message)
+            logger.debug(e.stack)
+            return Promise.reject(e)
+        })
 }
 
 const check = (opts) => {
@@ -129,8 +134,8 @@ const check = (opts) => {
     opts.type = opts.type || ''
 
     return (req, res, next) => {
-
         const options = Object.assign({}, opts)
+        options.subjectId = options.subjectId || options.objectId
 
         if(req.isAuthorized) {
             return next()
@@ -175,8 +180,14 @@ const check = (opts) => {
             type: options.type || null,
             permission: options.permission
         })
-            .then(()=> next())
-            .catch((e)=> next(e))
+            .then(()=> {
+                logger.debug('Allowed')
+                next()
+            })
+            .catch((e)=> {
+                logger.debug('Not Allowed: %s', e.message)
+                next(e)
+            })
     }
 }
 
@@ -216,8 +227,8 @@ const getRequestEntityId = (type, req) => {
 const loader = (type, id) => {
 
     logger.debug('Loading `%s` [id=%s]', type, id)
-
     const sdk = require('./raptor').client()
+
     switch (type) {
     case 'user':
     case 'profile':
@@ -231,7 +242,7 @@ const loader = (type, id) => {
     case 'device':
         return sdk.Inventory().read({ id })
     case 'tree':
-        return sdk.Tree().read({ id })
+        return sdk.Tree().tree({ id })
     case 'app':
         return sdk.App().read({ id })
     default:
@@ -244,4 +255,8 @@ const sync = (raw) => {
     return acl.save()
 }
 
-module.exports = { can, check, loader, sync }
+const list = (q) => {
+    return api.models.Acl.find(q)
+}
+
+module.exports = { can, check, loader, sync, list }

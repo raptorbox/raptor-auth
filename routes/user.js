@@ -94,6 +94,21 @@ module.exports.router = (router) => {
             })
     })
 
+    router.get('/:userId/impersonate', function(req, res) {
+        return api.User.read({ uuid: req.params.userId })
+            .then((user) => {
+                return api.Token.createLogin(user)
+                    .then((t) => {
+                        logger.debug('Impersonate %s', req.body.username)
+                        res.json({
+                            token: t.token,
+                            expires: Math.round(t.expires / 1000),
+                            user: user,
+                        })
+                    })
+            })
+    })
+
     router.get('/:userId', function(req, res) {
         return api.User.read({ uuid: req.params.userId })
             .then((user) => {

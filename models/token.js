@@ -4,6 +4,8 @@ const rand = require('./plugin/random')
 const config = require('../config')
 const uuidv4 = require('uuid/v4')
 
+const getDefaultExpires = () => new Date(Date.now() + (config.oauth2.ttl * 1000))
+
 var Token = new Schema({
     id: {
         type: String,
@@ -42,10 +44,13 @@ var Token = new Schema({
         type: Date,
         required: false,
         // +30 min
-        default: function() {
-            return new Date(Date.now() + (config.oauth2.ttl * 1000))
-        },
+        default: getDefaultExpires,
         set: function(expires) {
+
+            if(!expires) {
+                expires = getDefaultExpires()
+            }
+
             if(expires === 0) {
                 expires = null
             } else {
@@ -53,6 +58,7 @@ var Token = new Schema({
                     expires = new Date(expires * 1000)
                 }
             }
+
             return expires
         }
     },
