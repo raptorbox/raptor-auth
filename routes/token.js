@@ -76,7 +76,7 @@ module.exports.router = (router) => {
         }
         return api.Token.update(raw)
             .then((token) => {
-                logger.debug('Updated token %s', token.name)
+                logger.debug('Updated token %s [expires=%s]', token.name, token.expires)
                 res.json(token)
             })
     })

@@ -5,6 +5,25 @@ const config = require('../config')
 const uuidv4 = require('uuid/v4')
 
 const getDefaultExpires = () => new Date(Date.now() + (config.oauth2.ttl * 1000))
+const checkDate = (expires) => {
+
+    if(expires === null) {
+        expires = getDefaultExpires()
+    }
+
+    if(expires === 0) {
+        return null
+    } else {
+        // is numeric
+        if(expires * 1 == expires) {
+            return new Date(expires * 1000)
+        } else if (expires instanceof Date) {
+            return expires
+        }
+    }
+
+    return getDefaultExpires()
+}
 
 var Token = new Schema({
     id: {
@@ -45,22 +64,7 @@ var Token = new Schema({
         required: false,
         // +30 min
         default: getDefaultExpires,
-        set: function(expires) {
-
-            if(!expires) {
-                expires = getDefaultExpires()
-            }
-
-            if(expires === 0) {
-                expires = null
-            } else {
-                if(!(expires instanceof Date)) {
-                    expires = new Date(expires * 1000)
-                }
-            }
-
-            return expires
-        }
+        set: checkDate
     },
     userId: {
         type: String,
@@ -80,7 +84,7 @@ var Token = new Schema({
             delete ret._id
             delete ret.__v
             if(ret.expires) {
-                ret.expires = Math.round((new Date(ret.expires).getTime() / 1000)+1) //add 1sec
+                ret.expires = Math.round((new Date(ret.expires).getTime() / 1000)+1) //add 1sec to avoid rounding issue
             }
         }
     }
@@ -112,14 +116,9 @@ Token.methods.merge = function(t) {
             if (t.secret) {
                 token.secret = t.secret
             }
+
             if (t.expires !== undefined) {
-                if(t.expires === 0) {
-                    t.expires = null
-                } else {
-                    if(!(token.expires instanceof Date)) {
-                        token.expires = new Date(t.expires * 1000)
-                    }
-                }
+                token.expires = checkDate(t.expires)
             }
 
             if (t.enabled !== undefined && t.enabled !== null) {
