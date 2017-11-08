@@ -71,7 +71,6 @@ User.pre('save', function(next) {
         })
 })
 
-// return self id (allow user to edit is own account)
 User.methods.isOwner = function(user) {
     return this.id === user.id
 }

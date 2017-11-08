@@ -70,7 +70,18 @@ module.exports.router = (router) => {
      *           $ref: '#/definitions/User'
      */
     router.post('/', function(req, res) {
-        return api.User.create(req.body)
+
+        const user = Object.assign({}, req.body)
+        if(user.id !== undefined) {
+            delete user.id
+        }
+
+        //TODO review permission for users
+        if(!req.user.isAdmin()) {
+            user.roles = []
+        }
+
+        return api.User.create(user)
             .then((user) => {
                 logger.debug('Created user %s [id=%s]', user.username, user.id)
                 res.json(user)
@@ -78,7 +89,13 @@ module.exports.router = (router) => {
     })
 
     router.put('/:userId', function(req, res) {
+
         const u = Object.assign({}, req.body, { id: req.params.userId })
+        //TODO review permission for users
+        if(!req.user.isAdmin()) {
+            u.roles = []
+        }
+
         return api.User.update(u)
             .then((user) => {
                 logger.debug('Updated user %s [id=%s]', user.username, user.id)

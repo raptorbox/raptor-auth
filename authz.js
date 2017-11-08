@@ -191,7 +191,7 @@ const check = (opts) => {
         )
 
         if(!req.user) {
-            return new errors.Unauthorized()
+            return Promise.reject(new errors.Unauthorized())
         }
 
         return can({
@@ -255,7 +255,7 @@ const loader = (type, id) => {
         switch (type) {
         case 'user':
         case 'profile':
-            return api.User.read({ id: id })
+            return api.User.read({ id })
         case 'token':
             return api.Token.read({ id })
         case 'role':

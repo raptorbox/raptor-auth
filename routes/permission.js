@@ -44,7 +44,7 @@ module.exports.router = (router) => {
                             return authz.sync(obj)
                         }))
                             .then(() => {
-                                logger.debug('Stored %s [id=%s] permissions [%j]', acl.type, acl.subjectId, acl.permissions)
+                                logger.debug('Stored %s [id=%s] permissions %j', acl.type, acl.subjectId, acl.permissions)
                                 res.json(acl.permissions)
                             })
                     })

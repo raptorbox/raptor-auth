@@ -53,15 +53,8 @@ module.exports.router = (router) => {
     })
 
     router.post('/check', bearerAuth(), function(req, res) {
-
         const body = Object.assign({}, req.body)
         body.subjectId = body.subjectId || body.objectId
-
-        // set current user
-        if(!body.userId) {
-            body.user = req.user
-        }
-
         return require('../authz').can(body)
             .then(() => res.json({
                 result: true

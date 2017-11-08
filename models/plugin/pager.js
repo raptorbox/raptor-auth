@@ -22,8 +22,15 @@ module.exports = function (schema, options) {
             paging.sort = null
         }
 
-        const page = Math.max(0, paging.page - 1) // using a zero-based page index for use with skip()
-        const size = paging.size || 50
+        let page = 0
+        if(paging.page) {
+            page = Math.max(0, paging.page - 1)
+        }
+
+        let size = 50
+        if(paging.size) {
+            size = Math.max(0, paging.size * 1)
+        }
 
         let sort = paging.sort || {}
         if(typeof sort === 'string') {

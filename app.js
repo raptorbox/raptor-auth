@@ -81,9 +81,11 @@ passport.use(new LocalStrategy(credentialsLogin))
 passport.use(new BearerStrategy(function(t, done) {
     return api.models.Token.findOne({ token: t })
         .then((token) => {
+
             if (!token) {
                 return done(null, false)
             }
+
             if (token.isExpired()) {
                 return api.models.Token.remove({ _id: token._id })
                     .then(() => {
@@ -105,7 +107,11 @@ passport.use(new BearerStrategy(function(t, done) {
                     done(null, user, { token })
                 })
         })
-        .catch((e) => done(e, false))
+        .catch((e) => {
+            logger.warn('Exception on bearer auth: %s', e.message)
+            logger.debug(e.stack)
+            done(e, false)
+        })
 }))
 
 passport.serializeUser(function(user, done) {
@@ -181,6 +187,7 @@ app.use(function(err, req, res, next) {
     const internalError = new errors.InternalServer()
     res.status(internalError.code)
     res.json(internalError.toJSON())
+
 })
 
 module.exports = app
