@@ -9,18 +9,14 @@ let initialized = false
 l.initialize = () => {
     if (initialized) return Promise.resolve()
 
-    const mongoose = require('mongoose'),
-        cacheManager = require('cache-manager'),
-        mongooseStore = require('cache-manager-mongoose')
+    const cacheManager = require('cache-manager'),
+        redisStore = require('cache-manager-redis-store')
 
     cache = cacheManager.caching({
-        store : mongooseStore,
-        mongoose: mongoose,
-        modelOptions: {
-            collection: 'caches',
-            versionKey: false // do not create __v field
-        },
-        ttl: defaultTTL
+        store: redisStore,
+        host: 'redis',
+        db: 0,
+        ttl: 600
     })
 
     initialized  = true

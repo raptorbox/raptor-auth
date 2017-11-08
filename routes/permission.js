@@ -8,11 +8,11 @@ module.exports.router = (router) => {
     router.get('/:type/:id', function(req, res) {
         const acl = {
             type: req.params.type,
-            id: req.params.id,
+            subjectId: req.params.id,
         }
         return authz.list(acl)
             .then((acls) => {
-                res.json(acls)
+                res.json(acls.map((a) => a.permission))
             })
     })
 

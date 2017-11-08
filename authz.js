@@ -2,8 +2,11 @@
 const errors = require('./errors')
 const logger = require('./logger')
 const api = require('./api')
+const cache = require('./cache')
 
 const can = (req) => {
+
+    const cacheInfo = Object.assign({}, req)
 
     let p
     if (req.user) {
@@ -18,8 +21,10 @@ const can = (req) => {
 
     return p.then((user) => {
 
+        cacheInfo.userId = user.id
+
         // service role
-        if(user.isService()) {
+        if(user.roles.indexOf('service') > -1) {
             return Promise.resolve()
         }
 
@@ -35,12 +40,16 @@ const can = (req) => {
         }
 
         return p1.then((subject) => {
+
+            cacheInfo.subjectId = cacheInfo.subjectId || subject.id || subject.uuid
+
             return api.models.Role.find({ name: { $in: user.roles }})
                 .then((roles) => {
 
                     const permissions = roles.reduce((p, r) => {
                         return p.concat(r.permissions)
                     }, [])
+
                     const has = (perm) => {
                         const hasPerm = permissions.indexOf(perm) > -1
                         if(hasPerm) {
@@ -160,6 +169,15 @@ const check = (opts) => {
             }
         }
 
+        // HACK handle permission path, eg. /token/62a9aa34-961f-47b0-9a29-ab373a898c0d
+        if(options.type === 'permission' && (options.permission === 'update' || options.permission === 'read')) {
+            const params = req.url.split('/')
+            if(params.length === 3 && params[1] && params[2]) {
+                options.type = params[1]
+                options.subjectId = params[2]
+            }
+        }
+
         if(options.subjectId == null) {
             options.subjectId = getRequestEntityId(options.type, req)
         }
@@ -178,7 +196,8 @@ const check = (opts) => {
         return can({
             user: req.user,
             type: options.type || null,
-            permission: options.permission
+            permission: options.permission,
+            subjectId: options.subjectId || null
         })
             .then(()=> {
                 logger.debug('Allowed')
@@ -229,25 +248,44 @@ const loader = (type, id) => {
     logger.debug('Loading `%s` [id=%s]', type, id)
     const sdk = require('./raptor').client()
 
-    switch (type) {
-    case 'user':
-    case 'profile':
-        return api.User.read({ uuid: id })
-    case 'token':
-        return api.Token.read({ id })
-    case 'role':
-        return api.Role.read({ id })
-    case 'client':
-        return api.Client.read({ id })
-    case 'device':
-        return sdk.Inventory().read({ id })
-    case 'tree':
-        return sdk.Tree().tree({ id })
-    case 'app':
-        return sdk.App().read({ id })
-    default:
-        return Promise.reject(new errors.BadRequest())
+    const cacheKey = type + '_' + id
+
+    const loadType = () => {
+        switch (type) {
+        case 'user':
+        case 'profile':
+            return api.User.read({ uuid: id })
+        case 'token':
+            return api.Token.read({ id })
+        case 'role':
+            return api.Role.read({ id })
+        case 'client':
+            return api.Client.read({ id })
+        case 'device':
+            return sdk.Inventory().read({ id })
+        case 'tree':
+            return sdk.Tree().tree({ id })
+        case 'app':
+            return sdk.App().read({ id })
+        default:
+            return Promise.reject(new errors.BadRequest())
+        }
     }
+
+    // cache
+    return cache.get(cacheKey).then((val) => {
+        if(val) {
+            return Promise.resolve(val)
+        }
+        return loadType()
+            .then((el) => {
+                return cache.set(cacheKey, el, { ttl: 30 }) // 30 sec
+                    .catch((e) => {
+                        logger.warn('Failed to store cache %s: %s', cacheKey, e.message)
+                        return Promise.resolve(el)
+                    })
+            })
+    })
 }
 
 const sync = (raw) => {
