@@ -43,7 +43,7 @@ Client.plugin(require('../plugin/pager'))
 Client.plugin(rand)
 
 Client.methods.isOwner = function(user) {
-    return this.userId === user.uuid
+    return this.userId === user.id
 }
 
 Client.methods.merge = function(c) {

@@ -44,22 +44,22 @@ server.exchange(oauth2orize.exchange.password(function(client, username, passwor
                 }
 
                 return Promise.all([
-                    RefreshToken.remove({ userId: user.uuid, clientId: client.id }),
-                    Token.remove({ userId: user.uuid, clientId: client.id })
+                    RefreshToken.remove({ userId: user.id, clientId: client.id }),
+                    Token.remove({ userId: user.id, clientId: client.id })
                 ])
             }).then(() => {
 
                 const token = new Token({
                     name: 'at',
                     clientId: client.id,
-                    userId: user.uuid,
+                    userId: user.id,
                     type: 'oauth2',
                     expires: Date.now() + (config.oauth2.ttl*1000)
                 })
 
                 const refreshToken = new RefreshToken({
                     clientId: client.id,
-                    userId: user.uuid
+                    userId: user.id
                 })
 
                 return refreshToken.save().then(() => {
@@ -135,7 +135,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
             return Promise.resolve()
         }
 
-        return api.models.User.findOne({ uuid: token.userId, enabled: true }).then((user) => {
+        return api.models.User.findOne({ id: token.userId, enabled: true }).then((user) => {
 
             if (!user) {
                 done(null, false)
@@ -143,19 +143,19 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
             }
 
             return Promise.all([
-                RefreshToken.remove({ userId: user.uuid, clientId: client.id }),
-                Token.remove({ userId: user.uuid, clientId: client.id })
+                RefreshToken.remove({ userId: user.id, clientId: client.id }),
+                Token.remove({ userId: user.id, clientId: client.id })
             ]).then(() => {
 
                 const token = new Token({
                     name: 'at',
                     clientId: client.id,
-                    userId: user.uuid
+                    userId: user.id
                 })
 
                 const refreshToken = new RefreshToken({
                     clientId: client.id,
-                    userId: user.uuid
+                    userId: user.id
                 })
 
                 return refreshToken.save().then(() => {

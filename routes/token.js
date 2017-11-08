@@ -39,16 +39,16 @@ module.exports.router = (router) => {
         const q = {
             type: 'DEFAULT'
         }
-        let uuid = null
-        if(req.query.uuid) {
-            uuid = req.query.uuid
-            delete req.query.uuid
+        let uid = null
+        if(req.query.userId) {
+            uid = req.query.userId
+            delete req.query.userId
         }
         if(!req.user.isAdmin()) {
-            uuid = req.user.uuid
+            uid = req.user.id
         }
-        if(uuid) {
-            q.userId = uuid
+        if(uid) {
+            q.userId = uid
         }
         return api.Token.list(q, req.query)
             .then((tokens) => {
@@ -60,7 +60,7 @@ module.exports.router = (router) => {
     router.post('/', function(req, res) {
         const raw = Object.assign({}, req.body)
         if(!raw.userId) {
-            raw.userId = req.user.uuid
+            raw.userId = req.user.id
         }
         return api.Token.create(raw)
             .then((token) => {
@@ -72,7 +72,7 @@ module.exports.router = (router) => {
     router.put('/:id', function(req, res) {
         const raw = Object.assign({}, req.body, { id: req.params.id })
         if(!raw.userId) {
-            raw.userId = req.user.uuid
+            raw.userId = req.user.id
         }
         return api.Token.update(raw)
             .then((token) => {
@@ -82,7 +82,7 @@ module.exports.router = (router) => {
     })
 
     router.delete('/:id', function(req, res) {
-        return api.Token.delete({ uuid: req.params.id })
+        return api.Token.delete({ id: req.params.id })
             .then(() => {
                 logger.debug('Deleted token %s', req.params.id)
                 res.status(202).send()

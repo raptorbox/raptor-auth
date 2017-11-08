@@ -29,7 +29,7 @@ module.exports.router = (router) => {
     })
 
     router.post('/', function(req, res) {
-        const c = Object.assign({}, req.body, { userId: req.user.uuid })
+        const c = Object.assign({}, req.body, { userId: req.user.id })
         return api.Client.create(c)
             .then((client) => {
                 logger.debug('Created client %s [id=%s]', client.name, client.id)
@@ -38,7 +38,7 @@ module.exports.router = (router) => {
     })
 
     router.put('/:clientId', function(req, res) {
-        const c = Object.assign({}, req.body, { userId: req.user.uuid, id: req.params.clientId })
+        const c = Object.assign({}, req.body, { userId: req.user.id, id: req.params.clientId })
         return api.Client.update(c)
             .then((client) => {
                 logger.debug('Updated client %s [id=%s]', client.name, client.uuid)

@@ -95,7 +95,7 @@ Token.plugin(require('./plugin/token'))
 Token.plugin(rand)
 
 Token.methods.isOwner = function(user) {
-    return this.userId === user.uuid
+    return this.userId === user.id
 }
 
 Token.methods.isExpired = function() {

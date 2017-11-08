@@ -6,7 +6,7 @@ const broker = require('../broker')
 const User = require('../models/user')
 
 const notify = (op, user) => {
-    broker.send({type: 'user', id: user.uuid, op, user})
+    broker.send({type: 'user', id: user.id, op, user})
     return Promise.resolve(user)
 }
 
@@ -39,7 +39,7 @@ l.create = (u) => {
 }
 
 l.delete = (user) => {
-    return User.remove({ uuid: user.uuid })
+    return User.remove({ id: user.id })
         .then((user) => notify('delete', user))
 }
 

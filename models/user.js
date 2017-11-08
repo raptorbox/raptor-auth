@@ -7,17 +7,17 @@ const errors = require('../errors')
 const saltFactor = 10
 
 const User = new Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true,
-    },
-    uuid: {
+    id: {
         type: String,
         required: true,
         unique: true,
         default: require('uuid/v4'),
+        index: true,
+    },
+    username: {
+        type: String,
+        required: true,
+        unique: true,
         index: true,
     },
     password: {
@@ -73,7 +73,7 @@ User.pre('save', function(next) {
 
 // return self id (allow user to edit is own account)
 User.methods.isOwner = function(user) {
-    return this.uuid === user.uuid
+    return this.id === user.id
 }
 
 User.methods.merge = function(u) {

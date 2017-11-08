@@ -15,7 +15,7 @@ l.createLogin = (user) => {
     return l.create({
         name: 'login_'+t1,
         type: 'LOGIN',
-        userId: user.uuid,
+        userId: user.id,
     })
 }
 

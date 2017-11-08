@@ -45,6 +45,9 @@ const stop = () => {
         .then(() => {
             return require('./broker').close()
         })
+        .then(() => {
+            return require('./cache').close()
+        })
 }
 
 module.exports.start = start

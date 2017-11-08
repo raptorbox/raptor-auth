@@ -22,6 +22,10 @@ l.initialize = () => {
     initialized  = true
 }
 
+l.close = () => {
+    cache.store.getClient().quit()
+    return Promise.resolve()
+}
 
 l.set = (key, val, ttl) => {
     return new Promise(function(resolve, reject) {

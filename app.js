@@ -91,7 +91,7 @@ passport.use(new BearerStrategy(function(t, done) {
                     })
             }
 
-            return api.models.User.findOne({ uuid: token.userId})
+            return api.models.User.findOne({ id: token.userId})
                 .then((user) => {
 
                     if(user === null) {

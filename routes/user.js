@@ -21,12 +21,12 @@ module.exports.router = (router) => {
      *     allOf:
      *       - $ref: '#/definitions/LoginRequest'
      *       - required:
-     *         - uuid
+     *         - id
      *         - email
      *         - enabled
      *         - roles
      *       - properties:
-     *         uuid:
+     *         id:
      *           type: string
      *         email:
      *           type: string
@@ -72,22 +72,22 @@ module.exports.router = (router) => {
     router.post('/', function(req, res) {
         return api.User.create(req.body)
             .then((user) => {
-                logger.debug('Created user %s [id=%s]', user.username, user.uuid)
+                logger.debug('Created user %s [id=%s]', user.username, user.id)
                 res.json(user)
             })
     })
 
     router.put('/:userId', function(req, res) {
-        const u = Object.assign({}, req.body, { uuid: req.params.userId })
+        const u = Object.assign({}, req.body, { id: req.params.userId })
         return api.User.update(u)
             .then((user) => {
-                logger.debug('Updated user %s [id=%s]', user.username, user.uuid)
+                logger.debug('Updated user %s [id=%s]', user.username, user.id)
                 res.json(user)
             })
     })
 
     router.delete('/:userId', function(req, res) {
-        return api.User.delete({ uuid: req.params.userId })
+        return api.User.delete({ id: req.params.userId })
             .then(() => {
                 logger.debug('Deleted user %s', req.params.userId)
                 res.status(202).send()
@@ -95,7 +95,7 @@ module.exports.router = (router) => {
     })
 
     router.get('/:userId/impersonate', function(req, res) {
-        return api.User.read({ uuid: req.params.userId })
+        return api.User.read({ id: req.params.userId })
             .then((user) => {
                 return api.Token.createLogin(user)
                     .then((t) => {
@@ -110,7 +110,7 @@ module.exports.router = (router) => {
     })
 
     router.get('/:userId', function(req, res) {
-        return api.User.read({ uuid: req.params.userId })
+        return api.User.read({ id: req.params.userId })
             .then((user) => {
                 res.json(user)
             })

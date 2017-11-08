@@ -43,7 +43,7 @@ const createDefaultRoles = () => {
 const createDefaultToken = () => {
     return api.User.read({ username: 'service' })
         .then((u) => {
-            return api.models.Token.findOne({ name: 'service-default', userId: u.uuid })
+            return api.models.Token.findOne({ name: 'service-default', userId: u.id })
                 .then((token) => {
                     if(token) {
                         return Promise.resolve(token)
@@ -52,14 +52,14 @@ const createDefaultToken = () => {
                         name: config.serviceToken,
                         expires: 0,
                         enabled: true,
-                        userId: u.uuid
+                        userId: u.id
                     })
                     return t.save()
                 })
         })
         .then((token) => {
             config.token = token
-            logger.debug('Created token `%s` [type=%s expires=%s]', token.name, token.type, token.expires)
+            logger.debug('Created token `%s` [type=%s expires=%s]', token.name, token.type, token.expires || '0')
             return Promise.resolve()
         })
 }

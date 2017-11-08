@@ -41,7 +41,7 @@ const can = (req) => {
 
         return p1.then((subject) => {
 
-            cacheInfo.subjectId = cacheInfo.subjectId || subject.id || subject.uuid
+            cacheInfo.subjectId = cacheInfo.subjectId || (subject ? subject.id : null)
 
             return api.models.Role.find({ name: { $in: user.roles }})
                 .then((roles) => {
@@ -62,7 +62,7 @@ const can = (req) => {
                         req.type,
                         req.permission,
                         req.subjectId || '',
-                        user.uuid,
+                        user.id,
                         permissions)
 
                     if(has('admin') || has('service')) {
@@ -143,6 +143,7 @@ const check = (opts) => {
     opts.type = opts.type || ''
 
     return (req, res, next) => {
+
         const options = Object.assign({}, opts)
         options.subjectId = options.subjectId || options.objectId
 
@@ -214,7 +215,7 @@ const isOwner = (type, subject, user) => {
     switch (type) {
     case 'user':
     case 'profile':
-        return subject.uuid === user.uuid
+        return subject.id === user.id
     case 'role':
         return false
     case 'token':
@@ -222,7 +223,7 @@ const isOwner = (type, subject, user) => {
     case 'device':
     case 'tree':
     case 'app':
-        return subject.userId === user.uuid
+        return subject.userId === user.id
     default:
         return null
     }
@@ -254,7 +255,7 @@ const loader = (type, id) => {
         switch (type) {
         case 'user':
         case 'profile':
-            return api.User.read({ uuid: id })
+            return api.User.read({ id: id })
         case 'token':
             return api.Token.read({ id })
         case 'role':

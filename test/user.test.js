@@ -39,7 +39,7 @@ describe('auth service', function () {
                     const u = util.newUser()
                     return r.Admin().User().create(u)
                         .then((user) => {
-                            return r.Admin().User().delete(user.uuid)
+                            return r.Admin().User().delete(user.id)
                         })
                 })
         })

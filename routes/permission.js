@@ -30,9 +30,9 @@ module.exports.router = (router) => {
         // default to current user
         let readUser = Promise.resolve(req.user)
         if(acl.userId) {
-            readUser = api.User.read({ uuid: acl.userId })
+            readUser = api.User.read({ id: acl.userId })
         } else {
-            acl.userId = req.user.uuid
+            acl.userId = req.user.id
         }
 
         return readCall
