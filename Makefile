@@ -1,6 +1,6 @@
 .PHONY: docker/build docker/push
 
-name := raptorbox/broker
+name := raptorbox/auth
 
 gittag := $(shell git describe --tag)
 tag := $(shell echo ${gittag} | cut -d'-' -f 1)
