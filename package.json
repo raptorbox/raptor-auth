@@ -13,7 +13,6 @@
     "author": "Luca Capra <lcapra@fbk.eu>",
     "license": "Apache-2.0",
     "dependencies": {
-        "bcrypt": "^1.0.3",
         "bluebird": "^3.5.1",
         "body-parser": "^1.18.2",
         "cache-manager": "^2.5.0",
