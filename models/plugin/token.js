@@ -1,5 +1,5 @@
 
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const rand = require('./random')
 
 module.exports = function (schema, options) {
@@ -7,7 +7,7 @@ module.exports = function (schema, options) {
 
     schema.statics.generate = function(sec) {
         sec = sec || rand.random()
-        return require('bcrypt').hash(sec, options.saltFactor)
+        return bcrypt.hash(sec, options.saltFactor)
     }
 
     schema.pre('validate', function(next) {
