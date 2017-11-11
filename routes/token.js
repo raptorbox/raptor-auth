@@ -1,5 +1,6 @@
-var logger = require('../logger')
-var api = require('../api')
+const logger = require('../logger')
+const api = require('../api')
+const errors = require('../errors')
 
 module.exports.router = (router) => {
 
@@ -54,6 +55,28 @@ module.exports.router = (router) => {
             .then((tokens) => {
                 logger.debug('Found %s tokens', tokens.content.length)
                 res.json(tokens)
+            })
+    })
+
+    router.post('/check', function(req, res) {
+        if(!req.body.token) {
+            return Promise.reject(new errors.BadRequest('Missing token field'))
+        }
+        return api.Token.read({ token: req.body.token})
+            .then((token) => {
+                if(!token.isValid()) {
+                    return Promise.reject(new errors.Unauthorized('Token is not valid [1]'))
+                }
+                return api.User.read({ id: token.userId }).then((user) => {
+                    if(!user.enabled) {
+                        return Promise.reject(new errors.Unauthorized('Token is not valid [2]'))
+                    }
+                    logger.debug('Valid token %s [user=%s type=%s expires=%s]', token.name, user.username, token.type, token.expires || '0')
+                    res.json({
+                        id: token.id,
+                        userId: user.id,
+                    })
+                })
             })
     })
 

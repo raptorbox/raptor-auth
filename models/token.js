@@ -105,6 +105,10 @@ Token.methods.isExpired = function() {
     return Date.now() > this.expires
 }
 
+Token.methods.isValid = function() {
+    return this.enabled && !this.isExpired() 
+}
+
 Token.methods.merge = function(t) {
     const token = this
     return Promise.resolve()
