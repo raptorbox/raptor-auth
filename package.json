@@ -32,6 +32,7 @@
     "passport-oauth2-client-password": "^0.1.2",
     "raptor-sdk": "^5.0.1",
     "swagger-jsdoc": "^1.9.7",
+    "uuid": "^3.1.0",
     "winston": "^2.4.0"
   },
   "devDependencies": {
