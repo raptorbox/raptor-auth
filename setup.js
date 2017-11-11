@@ -6,7 +6,7 @@ const api = require('./api')
 
 module.exports.run = () => {
     return Promise.resolve()
-        .then(() => Promise.resolve(require('./broker').connect()))
+        .then(() => Promise.resolve(require('./broker').connect(config.users.service.username,config.users.service.password)))
         .then(() => require('./cache').initialize())
         .then(createDefaultUsers)
         .then(createDefaultRoles)

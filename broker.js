@@ -6,12 +6,14 @@ const logger = require('./logger')
 
 let client
 
-l.connect = () => {
+l.connect = (username, password) => {
 
-    client = mqtt.connect(config.broker, {
-        username: config.users.service.username,
-        password: config.users.service.password,
-    })
+    if (!password) {
+        password = username
+        username = '***'
+    }
+
+    client = mqtt.connect(config.broker, {username, password})
     client.on('close', function() {
         // logger.debug('MQTT disconnected')
     })
