@@ -1,43 +1,43 @@
 {
-    "name": "raptor-auth",
-    "version": "5.0.0",
-    "description": "",
-    "main": "./bin/cli.js",
-    "scripts": {
-        "test": "./node_modules/mocha/bin/mocha test/*.test.js",
-        "serve": "./bin/cli.js",
-        "test-file": "./node_modules/mocha/bin/mocha test/ --grep $@",
-        "release-major": "./node_modules/standard-version/bin/cli.js",
-        "release": "./node_modules/standard-version/bin/cli.js -- --release-as minor"
-    },
-    "author": "Luca Capra <lcapra@fbk.eu>",
-    "license": "Apache-2.0",
-    "dependencies": {
-        "bcryptjs": "^2.4.3",
-        "bluebird": "^3.5.1",
-        "body-parser": "^1.18.2",
-        "cache-manager": "^2.5.0",
-        "cache-manager-mongoose": "0.0.4",
-        "cache-manager-redis-store": "^1.2.0",
-        "express": "^4.16.2",
-        "express-promise-router": "^2.0.0",
-        "mongoose": "^4.12.5",
-        "mqtt": "^2.13.1",
-        "node-uuid": "^1.4.8",
-        "oauth2orize": "^1.11.0",
-        "passport": "^0.4.0",
-        "passport-http": "^0.3.0",
-        "passport-http-bearer": "^1.0.1",
-        "passport-local": "^1.0.0",
-        "passport-oauth2-client-password": "^0.1.2",
-        "raptor-sdk": "^4.3.37",
-        "swagger-jsdoc": "^1.9.7",
-        "winston": "^2.4.0"
-    },
-    "devDependencies": {
-        "chai": "^4.1.2",
-        "eslint": "^4.10.0",
-        "mocha": "^4.0.1",
-        "standard-version": "^4.2.0"
-    }
+  "name": "raptor-auth",
+  "version": "5.0.1",
+  "description": "",
+  "main": "./bin/cli.js",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha test/*.test.js",
+    "serve": "./bin/cli.js",
+    "test-file": "./node_modules/mocha/bin/mocha test/ --grep $@",
+    "release-major": "./node_modules/standard-version/bin/cli.js",
+    "release": "./node_modules/standard-version/bin/cli.js -- --release-as minor"
+  },
+  "author": "Luca Capra <lcapra@fbk.eu>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.2",
+    "cache-manager": "^2.5.0",
+    "cache-manager-mongoose": "0.0.4",
+    "cache-manager-redis-store": "^1.2.0",
+    "express": "^4.16.2",
+    "express-promise-router": "^2.0.0",
+    "mongoose": "^4.12.5",
+    "mqtt": "^2.13.1",
+    "node-uuid": "^1.4.8",
+    "oauth2orize": "^1.11.0",
+    "passport": "^0.4.0",
+    "passport-http": "^0.3.0",
+    "passport-http-bearer": "^1.0.1",
+    "passport-local": "^1.0.0",
+    "passport-oauth2-client-password": "^0.1.2",
+    "raptor-sdk": "^5.0.1",
+    "swagger-jsdoc": "^1.9.7",
+    "winston": "^2.4.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "eslint": "^4.10.0",
+    "mocha": "^4.0.1",
+    "standard-version": "^4.2.0"
+  }
 }
