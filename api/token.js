@@ -4,6 +4,7 @@ const l = module.exports
 const errors = require('../errors')
 const Token = require('../models/token')
 const broker = require('../broker')
+const cache = require('../cache')
 
 const notify = (op, token) => {
     broker.send({type: 'token', id: token.id, op, token})
@@ -37,6 +38,7 @@ l.update = (t) => {
     return l.read({ id: t.id })
         .then(token => token.merge(t)
             .then((token) => token.save()
+                .then((token) => cache.set(`token_${token.id}`, token))
                 .then(() => notify('update', token))
             )
         )
@@ -45,11 +47,16 @@ l.update = (t) => {
 l.create = (t) => {
     const token = new Token(t)
     return token.save()
+        .then((token) => cache.set(`token_${token.id}`, token))
         .then(() => notify('create', token))
 }
 
 l.delete = (token) => {
     return Token.remove(token)
+        .then((token) => {
+            return cache.del(`token_${token.id}`)
+                .then(() => Promise.resolve(token))
+        })
         .then((token) => notify('delete', token))
 }
 

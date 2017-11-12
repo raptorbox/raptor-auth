@@ -3,6 +3,7 @@ const l = module.exports
 
 const errors = require('../errors')
 const broker = require('../broker')
+const cache = require('../cache')
 const User = require('../models/user')
 
 const notify = (op, user) => {
@@ -28,6 +29,7 @@ l.update = (u) => {
     return l.read({ username: u.username })
         .then(user => user.merge(u)
             .then(() => user.save()
+                .then((user) => cache.set(`user_${user.id}`, user))
                 .then((user) => notify('update', user))
             )
         )
@@ -35,11 +37,16 @@ l.update = (u) => {
 
 l.create = (u) => {
     return (new User(u)).save()
+        .then((user) => cache.set(`user_${user.id}`, user))
         .then((user) => notify('create', user))
 }
 
 l.delete = (user) => {
     return User.remove({ id: user.id })
+        .then((user) => {
+            return cache.del(`user_${user.id}`)
+                .then(() => Promise.resolve(user))
+        })
         .then((user) => notify('delete', user))
 }
 
