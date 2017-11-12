@@ -37,9 +37,6 @@ l.get = (key) => {
     return new Promise(function(resolve, reject) {
         cache.get(key, function(err, val) {
             if(err) return reject(err)
-            if (val._id) {
-                val._id = new require('mongoose').Schema.Types.ObjectId(val._id)
-            }
             resolve(val)
         })
     })

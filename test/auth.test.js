@@ -7,12 +7,10 @@ const util = require('./util')
 
 describe('auth service', function () {
 
-    before(function () {
-        return require('../index').start()
-    })
-    after(function () {
-        return require('../index').stop()
-    })
+
+    before(util.before)
+    after(util.after)
+
 
     describe('authentication API', function () {
 
