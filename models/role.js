@@ -32,6 +32,9 @@ var Role = new Schema({
         transform: function (doc, ret) {
             delete ret._id
             delete ret.__v
+            if(!ret.domain) {
+                delete ret.domain
+            }
         }
     }
 })

@@ -91,9 +91,18 @@ module.exports.router = (router) => {
     router.put('/:userId', function(req, res) {
 
         const u = Object.assign({}, req.body, { id: req.params.userId })
+
         //TODO review permission for users
-        if(!req.user.isAdmin()) {
-            u.roles = []
+        // only `admin`, `admin_user` can promote an user to admin
+        if (u.roles) {
+
+            u.roles = u.roles
+                .filter((role) => role !== 'service')
+
+            // cannot change roles
+            if(!req.user.isAdmin()) {
+                delete u.roles
+            }
         }
 
         return api.User.update(u)

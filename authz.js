@@ -5,25 +5,25 @@ const api = require('./api')
 
 const can = (req) => {
 
-    const cacheInfo = Object.assign({}, req)
-
     let p
     if (req.user) {
         p = Promise.resolve(req.user)
     } else {
         if(req.userId) {
-            p = loader('user', req.userId)
+            p = loader('user', req.userId).then((user) => {
+                req.user = user
+                return Promise.resolve(user)
+            })
         } else {
             p = Promise.reject(new errors.NotFound('Missing user'))
         }
     }
 
-    return p.then((user) => {
-
-        cacheInfo.userId = user.id
+    return p.then(() => {
 
         // service role
-        if(user.roles.indexOf('service') > -1) {
+        if(req.user.roles.indexOf('service') > -1) {
+            logger.debug('Allow service user')
             return Promise.resolve()
         }
 
@@ -32,17 +32,18 @@ const can = (req) => {
             p1 = Promise.resolve(req.subject)
         } else {
             if(req.subjectId) {
-                p1 = loader(req.type, req.subjectId)
+                p1 = loader(req.type, req.subjectId).then((subj) => {
+                    req.subject = subj
+                    return Promise.resolve(subj)
+                })
             } else {
                 p1 = Promise.resolve(null)
             }
         }
 
-        return p1.then((subject) => {
+        return p1.then(() => {
 
-            cacheInfo.subjectId = cacheInfo.subjectId || (subject ? subject.id : null)
-
-            return api.models.Role.find({ name: { $in: user.roles }})
+            return api.models.Role.find({ name: { $in: req.user.roles }})
                 .then((roles) => {
 
                     const permissions = roles.reduce((p, r) => {
@@ -52,7 +53,7 @@ const can = (req) => {
                     const has = (perm) => {
                         const hasPerm = permissions.indexOf(perm) > -1
                         if(hasPerm) {
-                            logger.debug('User %s can %s', user.username, perm)
+                            logger.debug('User %s can %s', req.user.username, perm)
                         }
                         return hasPerm
                     }
@@ -61,7 +62,7 @@ const can = (req) => {
                         req.type,
                         req.permission,
                         req.subjectId || '',
-                        user.id,
+                        req.user.id,
                         permissions)
 
                     if(has('admin') || has('service')) {
@@ -69,7 +70,7 @@ const can = (req) => {
                     }
 
                     // allow create on admin_own*
-                    if( !subject && (
+                    if( !req.subject && (
                         req.permission === 'create' ||
                         req.permission === 'read' // list
                     )) {
@@ -90,8 +91,8 @@ const can = (req) => {
                         }
                     }
 
-                    if(subject) {
-                        if(isOwner(req.type, subject, user)) {
+                    if(req.subject) {
+                        if(isOwner(req.type, req.subject, req.user)) {
                             if(has('admin_own')) {
                                 return Promise.resolve()
                             }
@@ -109,22 +110,26 @@ const can = (req) => {
 
                     }
 
-                    // TODO: app level check
+                    // app level check
+                    return hasAppPermission(req).then((response) => {
 
-                    // acl check
-                    const q = Object.assign({}, req)
-                    q.permission = { $in: [ q.permission, 'admin' ] }
-                    return api.models.Acl.find(req)
-                        .then((acls) => {
+                        if (response.result) {
+                            return Promise.resolve()
+                        }
+
+                        // acl check
+                        const q = Object.assign({}, req)
+                        q.permission = { $in: [ q.permission, 'admin' ] }
+                        return api.models.Acl.find(req).then((acls) => {
                             if(acls.filter((acl) => acl.allowed).length) {
                                 return Promise.resolve()
                             }
                             return Promise.reject(new errors.Forbidden())
-                        })
-                        .catch((e) => {
-                            logger.debug('User `%s` not allowed to `%s` on `%s`', user.username, req.permission, req.type)
+                        }).catch((e) => {
+                            logger.debug('User `%s` not allowed to `%s` on `%s`', req.user.username, req.permission, req.type)
                             return Promise.reject(e)
                         })
+                    })
                 })
         })
     })
@@ -133,6 +138,29 @@ const can = (req) => {
             logger.debug(e.stack)
             return Promise.reject(e)
         })
+}
+
+
+const hasAppPermission = (req) => {
+
+    const raptor = require('./raptor').client()
+
+    const q = {
+        users: [ req.user.id ]
+    }
+    if (req.subject) {
+        if(req.type === 'device') {
+            q.devices = [ req.subject.id ]
+        }
+        if(req.type === 'app') {
+            q.id = req.subject.id
+        }
+    }
+    logger.debug('App lookup %j', q)
+    return raptor.App().search(q).then((apps) => {
+        console.warn(apps)
+        return Promise.resolve({ result: false })
+    })
 }
 
 // route level check to close the authorization process, when opts.last != true.
@@ -310,4 +338,4 @@ const list = (q) => {
     return api.models.Acl.find(q)
 }
 
-module.exports = { can, check, last, loader, sync, list }
+module.exports = { can, check, last, loader, sync, list, hasAppPermission }

@@ -52,7 +52,8 @@ l.update = (u) => {
 }
 
 l.create = (u) => {
-    return (new User(u)).save()
+    return new User().merge(u)
+        .then((user) => user.save())
         .then((user) => cache.set(`user_${user.id}`, user.toObject()))
         .then((user) => notify('create', user))
 }
