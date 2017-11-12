@@ -27,18 +27,34 @@ l.list = (query, pager) => {
 }
 
 l.read = (query) => {
-    return Token.findOne(query)
-        .then((token) => {
-            if(!token) throw new errors.NotFound()
-            return Promise.resolve(token)
-        })
+    let p = Promise.resolve()
+    if(query && query.id) {
+        p = cache.get(`token_${query.id}`)
+            .then((json) => {
+
+                if(json) {
+                    json = new Token(json)
+                    json.isNew = false
+                }
+
+                return Promise.resolve(json)
+            })
+    }
+    return p.then((token) => {
+        if (token) return Promise.resolve(token)
+        return Token.findOne(query)
+            .then((token) => {
+                if(!token) throw new errors.NotFound()
+                return Promise.resolve(token)
+            })
+    })
 }
 
 l.update = (t) => {
     return l.read({ id: t.id })
         .then(token => token.merge(t)
             .then((token) => token.save()
-                .then((token) => cache.set(`token_${token.id}`, token))
+                .then((token) => cache.set(`token_${token.id}`, token.toObject()))
                 .then(() => notify('update', token))
             )
         )
@@ -47,7 +63,7 @@ l.update = (t) => {
 l.create = (t) => {
     const token = new Token(t)
     return token.save()
-        .then((token) => cache.set(`token_${token.id}`, token))
+        .then((token) => cache.set(`token_${token.id}`, token.toObject()))
         .then(() => notify('create', token))
 }
 

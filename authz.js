@@ -249,7 +249,7 @@ const loader = (type, id) => {
     logger.debug('Loading `%s` [id=%s]', type, id)
     const sdk = require('./raptor').client()
 
-    const cacheKey = type + '_' + id
+    const cacheKey = `${type}_${id}`
 
     const loadType = () => {
         switch (type) {
@@ -273,20 +273,7 @@ const loader = (type, id) => {
         }
     }
 
-    // cache
-    return cache.get(cacheKey).then((val) => {
-        if(val) {
-            return Promise.resolve(val)
-        }
-        return loadType()
-            .then((el) => {
-                return cache.set(cacheKey, el, { ttl: 30 }) // 30 sec
-                    .catch((e) => {
-                        logger.warn('Failed to store cache %s: %s', cacheKey, e.message)
-                        return Promise.resolve(el)
-                    })
-            })
-    })
+    return loadType()
 }
 
 const sync = (raw) => {
