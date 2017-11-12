@@ -1,7 +1,7 @@
-var logger = require('../logger')
-var api = require('../api')
-
 module.exports.router = (router) => {
+
+    const logger = require('../logger')
+    const api = require('../api')
 
     /**
      * @swagger

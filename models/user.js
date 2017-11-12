@@ -76,7 +76,7 @@ User.methods.isOwner = function(user) {
 }
 
 User.methods.loadRoles = function() {
-    const Role = require('./Role')
+    const Role = require('./role')
     return Role.find({
         name: { $in: this.roles }
     })

@@ -141,7 +141,13 @@ for (const path in routes) {
             failWithError: true,
             session: false
         }))
-        subrouter.use(require('./authz').check({ type: path }))
+
+        // register custom callback
+        let authorize = null
+        if(routes[path].authorize) {
+            authorize = routes[path].authorize
+        }
+        subrouter.use(require('./authz').check({ type: path, authorize }))
     }
     routes[path].router(subrouter)
 

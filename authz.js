@@ -2,7 +2,6 @@
 const errors = require('./errors')
 const logger = require('./logger')
 const api = require('./api')
-const cache = require('./cache')
 
 const can = (req) => {
 
@@ -136,18 +135,38 @@ const can = (req) => {
         })
 }
 
+// route level check to close the authorization process, when opts.last != true.
+// Required on all routes definitions
+const last = () => {
+    return function(req, res, next) {
+        if(req.isAuthorized === undefined) {
+            return next(new errors.InternalServer('Authorization failed'))
+        }
+        if(req.isAuthorized === true) {
+            return next()
+        }
+        else {
+            return next(req.isAuthorized)
+        }
+    }
+}
+
 const check = (opts) => {
 
     opts = opts || {}
     opts.permission = opts.permission || null
     opts.type = opts.type || ''
+    // if last === true and authz fails will throw a 401/403 and stop the request
+    // used to have more granular permission checking on the single route
+    // default: true (req fail if not authorized)
+    opts.last = opts.last === false ? false : true
 
     return (req, res, next) => {
 
         const options = Object.assign({}, opts)
         options.subjectId = options.subjectId || options.objectId
 
-        if(req.isAuthorized) {
+        if(req.isAuthorized === true) {
             return next()
         }
 
@@ -170,45 +189,52 @@ const check = (opts) => {
             }
         }
 
-        // HACK handle permission path, eg. /token/62a9aa34-961f-47b0-9a29-ab373a898c0d
-        if(options.type === 'permission' && (options.permission === 'update' || options.permission === 'read')) {
-            const params = req.url.split('/')
-            if(params.length === 3 && params[1] && params[2]) {
-                options.type = params[1]
-                options.subjectId = params[2]
-            }
-        }
-
-        if(options.subjectId == null) {
-            options.subjectId = getRequestEntityId(options.type, req)
-        }
-
-        logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s]',
-            req.user.username,
-            options.permission,
-            options.type,
-            options.subjectId || ''
-        )
-
         if(!req.user) {
             return Promise.reject(new errors.Unauthorized())
         }
 
-        return can({
-            user: req.user,
-            type: options.type || null,
-            permission: options.permission,
-            subjectId: options.subjectId || null
+        let authorized = Promise.resolve()
+        // routes group level callback
+        if(options.authorize) {
+            authorized = options.authorize(options, req)
+        }
+
+        return authorized.then(() => {
+
+            if(options.subjectId == null) {
+                options.subjectId = getRequestEntityId(options.type, req)
+            }
+
+            let user = options.user || req.user
+
+            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s]',
+                user.username,
+                options.permission,
+                options.type,
+                options.subjectId || ''
+            )
+
+            return can({
+                user,
+                type: options.type || null,
+                permission: options.permission,
+                subjectId: options.subjectId || null
+            })
+        }).then(()=> {
+            req.isAuthorized = true
+            next()
+        }).catch((e)=> {
+
+            req.isAuthorized = e
+
+            // not last, other checks will follow
+            if(!opts.last) {
+                return next()
+            }
+
+            logger.debug('Not Allowed: %s', e.message)
+            next(e)
         })
-            .then(()=> {
-                req.isAuthorized = true
-                next()
-            })
-            .catch((e)=> {
-                logger.debug('Not Allowed: %s', e.message)
-                req.isAuthorized = e
-                next(e)
-            })
     }
 }
 
@@ -284,4 +310,4 @@ const list = (q) => {
     return api.models.Acl.find(q)
 }
 
-module.exports = { can, check, loader, sync, list }
+module.exports = { can, check, last, loader, sync, list }

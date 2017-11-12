@@ -1,8 +1,19 @@
-const logger = require('../logger')
-const api = require('../api')
-const errors = require('../errors')
+
+module.exports.authorize = (options, req) => {
+
+    // /token/check
+    if (req.url === '/check') {
+        options.permission = 'read'
+    }
+
+    return Promise.resolve()
+}
 
 module.exports.router = (router) => {
+
+    const logger = require('../logger')
+    const api = require('../api')
+    const errors = require('../errors')
 
     /**
      * @swagger
@@ -73,8 +84,9 @@ module.exports.router = (router) => {
                     }
                     return user.loadRoles().then((roles) => {
                         logger.debug('Valid token %s [user=%s type=%s expires=%s]', token.name, user.username, token.type, token.expires || '0')
-                        user.roles = roles
-                        res.json(user)
+                        const json = user.toJSON()
+                        json.roles = roles
+                        res.json(json)
                     })
                 })
             })

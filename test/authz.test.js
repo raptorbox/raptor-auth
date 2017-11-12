@@ -41,5 +41,22 @@ describe('auth service', function () {
                         })
                 })
         })
+
+        it('should check a token', function () {
+            return util.getRaptor()
+                .then((adm) => {
+                    return util.createUserInstance()
+                        .then(function (usr) {
+                            return adm.Admin().Token()
+                                .check({
+                                    token: usr.Auth().getToken(),
+                                })
+                                .then((usr1) => {
+                                    assert.equal(usr1.id, usr.Auth().getUser().id)
+                                    return Promise.resolve()
+                                })
+                        })
+                })
+        })
     })
 })

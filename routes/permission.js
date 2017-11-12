@@ -3,6 +3,20 @@ const api = require('../api')
 const authz = require('../authz')
 const Promise = require('bluebird')
 
+module.exports.authorize = (options, req) => {
+
+    // handle permission path, eg. /token/62a9aa34-961f-47b0-9a29-ab373a898c0d
+    if(options.type === 'permission' && (options.permission === 'update' || options.permission === 'read')) {
+        const params = req.url.split('/')
+        if(params.length === 3 && params[1] && params[2]) {
+            options.type = params[1]
+            options.subjectId = params[2]
+        }
+    }
+
+    return Promise.resolve()
+}
+
 module.exports.router = (router) => {
 
     router.get('/:type/:id', function(req, res) {
