@@ -3,11 +3,8 @@ const l = module.exports
 const defaultTTL = 10 // in sec
 let cache
 
-// avoid reinitialization during  tests
-let initialized = false
-
 l.initialize = () => {
-    if (initialized) return Promise.resolve()
+    if (cache) return Promise.resolve()
 
     const cacheManager = require('cache-manager'),
         redisStore = require('cache-manager-redis-store')
@@ -19,11 +16,11 @@ l.initialize = () => {
         ttl: 600
     })
 
-    initialized  = true
 }
 
 l.close = () => {
     cache.store.getClient().quit()
+    cache = null
     return Promise.resolve()
 }
 
