@@ -201,11 +201,12 @@ const check = (opts) => {
             subjectId: options.subjectId || null
         })
             .then(()=> {
-                logger.debug('Allowed')
+                req.isAuthorized = true
                 next()
             })
             .catch((e)=> {
                 logger.debug('Not Allowed: %s', e.message)
+                req.isAuthorized = e
                 next(e)
             })
     }
@@ -248,8 +249,6 @@ const loader = (type, id) => {
 
     logger.debug('Loading `%s` [id=%s]', type, id)
     const sdk = require('./raptor').client()
-
-    const cacheKey = `${type}_${id}`
 
     const loadType = () => {
         switch (type) {
