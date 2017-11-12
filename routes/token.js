@@ -71,10 +71,10 @@ module.exports.router = (router) => {
                     if(!user.enabled) {
                         return Promise.reject(new errors.Unauthorized('Token is not valid [2]'))
                     }
-                    logger.debug('Valid token %s [user=%s type=%s expires=%s]', token.name, user.username, token.type, token.expires || '0')
-                    res.json({
-                        id: token.id,
-                        userId: user.id,
+                    return user.loadRoles().then((roles) => {
+                        logger.debug('Valid token %s [user=%s type=%s expires=%s]', token.name, user.username, token.type, token.expires || '0')
+                        user.roles = roles
+                        res.json(user)
                     })
                 })
             })
