@@ -26,17 +26,22 @@ l.close = () => {
 
 l.set = (key, val, ttl) => {
     return new Promise(function(resolve, reject) {
-        cache.set(key, val, ttl || defaultTTL, function(err) {
+        const json = val.toObject ? val.toObject() : val
+        cache.set(key, json, ttl || defaultTTL, function(err) {
             if(err) return reject(err)
             resolve(val)
         })
     })
 }
 
-l.get = (key) => {
+l.get = (key, Model) => {
     return new Promise(function(resolve, reject) {
         cache.get(key, function(err, val) {
             if(err) return reject(err)
+            if(Model) {
+                val = new Model(val)
+                val.isNew = false
+            }
             resolve(val)
         })
     })

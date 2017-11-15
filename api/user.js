@@ -20,16 +20,7 @@ l.list = (query, pager) => {
 l.read = (query) => {
     let p = Promise.resolve(null)
     if(query && query.id) {
-        p = cache.get(`user_${query.id}`)
-            .then((json) => {
-
-                if(json) {
-                    json = new User(json)
-                    json.isNew = false
-                }
-
-                return Promise.resolve(json)
-            })
+        p = cache.get(`user_${query.id}`, User)
     }
     return p.then((user) => {
         if (user) return Promise.resolve(user)
@@ -45,7 +36,7 @@ l.update = (u) => {
     return l.read({ username: u.username })
         .then(user => user.merge(u)
             .then(() => user.save()
-                .then((user) => cache.set(`user_${user.id}`, user.toObject()))
+                .then((user) => cache.set(`user_${user.id}`, user))
                 .then((user) => notify('update', user))
             )
         )
@@ -54,7 +45,7 @@ l.update = (u) => {
 l.create = (u) => {
     return new User().merge(u)
         .then((user) => user.save())
-        .then((user) => cache.set(`user_${user.id}`, user.toObject()))
+        .then((user) => cache.set(`user_${user.id}`, user))
         .then((user) => notify('create', user))
 }
 

@@ -53,7 +53,7 @@ const can = (req) => {
                     const has = (perm) => {
                         const hasPerm = permissions.indexOf(perm) > -1
                         if(hasPerm) {
-                            logger.debug('User %s can %s', req.user.username, perm)
+                            logger.debug('User `%s` can `%s`', req.user.username, perm)
                         }
                         return hasPerm
                     }
@@ -145,21 +145,38 @@ const hasAppPermission = (req) => {
 
     const raptor = require('./raptor').client()
 
+    if (!req.subject || !req.subject.domain) {
+        return Promise.resolve({ result: false })
+    }
+
     const q = {
         users: [ req.user.id ]
     }
-    if (req.subject) {
-        if(req.type === 'device') {
+
+    if(req.type === 'device') {
+        if (req.subject) {
             q.devices = [ req.subject.id ]
         }
-        if(req.type === 'app') {
-            q.id = req.subject.id
-        }
     }
+    if(req.type === 'app') {
+        q.id = req.subject.id
+    }
+
     logger.debug('App lookup %j', q)
-    return raptor.App().search(q).then((apps) => {
-        console.warn(apps)
-        return Promise.resolve({ result: false })
+    return raptor.App().search(q).then((pager) => {
+
+        const allowed = pager.getContent().filter((app) => {
+
+            console.warn(JSON.stringify(app, null, 2))
+            const r = {}
+            app.roles.forEach((role) => r[role.name] = role)
+
+            return app.users.filter((u) => {
+                u.roles
+            })
+        }).length > 0
+
+        return Promise.resolve({ result: allowed })
     })
 }
 

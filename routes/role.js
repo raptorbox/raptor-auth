@@ -1,6 +1,12 @@
 
-var logger = require('../logger')
-var api = require('../api')
+const logger = require('../logger')
+const api = require('../api')
+const config = require('../config')
+
+// disallow configuration managed roles
+const isReservedRole = (r) => {
+    return !r.domain && Object.values(config.roles).filter((r1) => r1.name === r.name).length !== 0
+}
 
 module.exports.router = (router) => {
 
@@ -31,10 +37,17 @@ module.exports.router = (router) => {
     })
 
     const save = (req, res) => {
+
         const r = Object.assign({}, req.body)
+
         if(req.params.id) {
             r.id = req.params.id
         }
+
+        if(isReservedRole(r)) {
+            return Promise.reject(new require('../errors').BadRequest(`Role '${r.name}' is reserved`))
+        }
+
         return api.Role.save(r)
             .then((role) => {
                 logger.debug('Saved role %s [permissions=%j]', role.name, role.permissions)
@@ -50,15 +63,22 @@ module.exports.router = (router) => {
     })
 
     router.delete('/:id', function(req, res) {
-        return api.Role.delete({ id: req.params.id })
-            .then(() => {
-                logger.debug('Deleted role %s', req.params.id)
-                res.status(202).send()
-            })
+        return api.Role.read({ id: req.params.id }).then((r) => {
+
+            if(isReservedRole(r)) {
+                return Promise.reject(new require('../errors').BadRequest(`Role '${r.name}' is reserved`))
+            }
+
+            return api.Role.delete({ id: req.params.id })
+                .then(() => {
+                    logger.debug('Deleted role %s', req.params.id)
+                    res.status(202).send()
+                })
+        })
     })
 
-    router.get('/:role', function(req, res) {
-        return api.Role.read({ id: req.params.role })
+    router.get('/:id', function(req, res) {
+        return api.Role.read({ id: req.params.id })
             .then((role) => {
                 res.json(role)
             })
