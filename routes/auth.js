@@ -11,12 +11,10 @@ module.exports.router = (router) => {
         })
     }
 
-    router.post('/login', passport.authenticate('local', {
-        failWithError: true, session: false
-    }), function(req, res) {
+    router.post('/login', passport.authenticate('local', {failWithError: true, session: false}), function(req, res) {
         return api.Token.createLogin(req.user)
             .then((t) => {
-                logger.debug('Logged in %s', req.body.username)
+                logger.debug('Logged in %s [id=%s]', req.user.username, req.user.id)
                 res.json({
                     token: t.token,
                     expires: Math.round(t.expires / 1000),

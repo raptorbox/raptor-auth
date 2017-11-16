@@ -1,156 +1,230 @@
 
+const Promise = require('bluebird')
 const errors = require('./errors')
 const logger = require('./logger')
 const api = require('./api')
 
-const can = (req) => {
-
-    let p
+const loadUser = (req) => {
     if (req.user) {
-        p = Promise.resolve(req.user)
-    } else {
-        if(req.userId) {
-            p = loader('user', req.userId).then((user) => {
-                req.user = user
-                return Promise.resolve(user)
-            })
-        } else {
-            p = Promise.reject(new errors.NotFound('Missing user'))
-        }
+        return Promise.resolve()
+    }
+    if(req.userId) {
+        return loader('user', req.userId).then((user) => {
+            req.user = user
+            return Promise.resolve()
+        })
+    }
+    return Promise.reject(new errors.NotFound('Missing user'))
+}
+
+const loadSubject = (req) => {
+    if(req.subject) {
+        return Promise.resolve(req.subject)
+    }
+    if(req.subjectId) {
+        return loader(req.type, req.subjectId).then((subj) => {
+            req.subject = subj
+            return Promise.resolve()
+        })
+    }
+    return Promise.resolve()
+}
+
+const loadDomain = (req) => {
+
+    let domain = req.domain
+    // set subject default domain
+    if(!domain && req.subject && req.subject.domain) {
+        domain = req.subject.domain
     }
 
-    return p.then(() => {
+    // console.warn('***************** load domain ', domain, req.subject)
 
-        // service role
-        if(req.user.roles.indexOf('service') > -1) {
-            logger.debug('Allow service user')
+    if(domain) {
+
+        // skip call for app when subj === domain
+        if(req.type === 'app' && (req.subject && req.subject.id === domain)) {
+            req.domain = req.subject
+
+            // console.warn('***************** load domain: same subj ')
             return Promise.resolve()
         }
 
-        let p1
-        if(req.subject) {
-            p1 = Promise.resolve(req.subject)
-        } else {
-            if(req.subjectId) {
-                p1 = loader(req.type, req.subjectId).then((subj) => {
-                    req.subject = subj
-                    return Promise.resolve(subj)
-                })
-            } else {
-                p1 = Promise.resolve(null)
+        // console.warn('***************** load domain app:' + domain)
+        return loader('app', domain).then((d) => {
+            req.domain = d
+            return Promise.resolve()
+        })
+    }
+
+    return Promise.resolve()
+}
+
+const checkPermission = ({ roles, req, hasOwnership }) => {
+
+    const permissions = roles.reduce((p, r) => {
+        return p.concat(r.permissions)
+    }, [])
+
+    const has = (perm) => {
+        const hasPerm = permissions.indexOf(perm) > -1
+        if(hasPerm) {
+            logger.debug('User `%s` can `%s`', req.user.username, perm)
+        }
+        return hasPerm
+    }
+
+    logger.debug('Check `%s_%s` userId=%s subjectId=%s domain=%s',
+        req.permission,
+        req.type,
+        req.subject ? req.subject.id : '',
+        req.user.id,
+        req.domain ? req.domain.id : '')
+
+    if(has('admin') || has('service')) {
+        return true
+    }
+
+    // allow create on admin_own*
+    if( !req.subject && (req.permission === 'create' || req.permission === 'read')) {
+        if(has('admin_own')) {
+            return true
+        }
+        if(req.type && has('admin_own_' + req.type)) {
+            return true
+        }
+    }
+
+    if(req.type) {
+        if(has(`admin_${req.type}`)) {
+            return true
+        }
+        if(has(`${req.permission}_${req.type}`)) {
+            return true
+        }
+    }
+
+    if(req.subject) {
+        if(hasOwnership && hasOwnership()) {
+            if(has('admin_own')) {
+                return true
+            }
+            if(req.type) {
+                //admin_own_device
+                if(has('admin_own_' + req.type)) {
+                    return true
+                }
+                //read_own_device
+                if(has(req.permission + '_own_' + req.type)) {
+                    return true
+                }
             }
         }
+    }
 
-        return p1.then(() => {
+    return false
+}
 
-            return api.models.Role.find({ name: { $in: req.user.roles }})
-                .then((roles) => {
+const can = (req) => {
 
-                    const permissions = roles.reduce((p, r) => {
-                        return p.concat(r.permissions)
-                    }, [])
+    return loadUser(req).then(() => {
+        // check for service role
+        if(req.user && req.user.roles.indexOf('service') > -1) {
+            logger.debug('Allow [service] user')
+            return Promise.resolve({ result: true })
+        }
+        return loadSubject(req)
+    }).then((res) => {
+        if (res && res.result) {
+            return Promise.resolve(res)
+        }
+        return loadDomain(req)
+    }).then((res) => {
 
-                    const has = (perm) => {
-                        const hasPerm = permissions.indexOf(perm) > -1
-                        if(hasPerm) {
-                            logger.debug('User `%s` can `%s`', req.user.username, perm)
-                        }
-                        return hasPerm
-                    }
+        if(res && res.result === true) {
+            return Promise.resolve()
+        }
 
-                    logger.debug('Check %s_%s [id=%s] for %s in permissions %j',
-                        req.type,
-                        req.permission,
-                        req.subjectId || '',
-                        req.user.id,
-                        permissions)
+        return req.user.loadRoles()
+            .then((roles) => {
 
-                    if(has('admin') || has('service')) {
+                const allowed = checkPermission({
+                    roles, req,
+                    hasOwnership: () => isOwner(req.type, req.subject, req.user)
+                })
+                if(allowed) {
+                    return Promise.resolve()
+                }
+
+                // app level check
+                return hasAppPermission(req).then((response) => {
+
+                    if (response.result) {
                         return Promise.resolve()
                     }
 
-                    // allow create on admin_own*
-                    if( !req.subject && (
-                        req.permission === 'create' ||
-                        req.permission === 'read' // list
-                    )) {
-                        if(has('admin_own')) {
+                    // acl check
+                    const q = Object.assign({}, req)
+                    q.permission = { $in: [ q.permission, 'admin' ] }
+                    return api.models.Acl.find(req).then((acls) => {
+                        if(acls.filter((acl) => acl.allowed).length) {
                             return Promise.resolve()
                         }
-                        if(req.type && has('admin_own_' + req.type)) {
-                            return Promise.resolve()
-                        }
-                    }
-
-                    if(req.type) {
-                        if(has(`admin_${req.type}`)) {
-                            return Promise.resolve()
-                        }
-                        if(has(`${req.permission}_${req.type}`)) {
-                            return Promise.resolve()
-                        }
-                    }
-
-                    if(req.subject) {
-                        if(isOwner(req.type, req.subject, req.user)) {
-                            if(has('admin_own')) {
-                                return Promise.resolve()
-                            }
-                            if(req.type) {
-                                //admin_own_device
-                                if(has('admin_own_' + req.type)) {
-                                    return Promise.resolve()
-                                }
-                                //read_own_device
-                                if(has(req.permission + '_own_' + req.type)) {
-                                    return Promise.resolve()
-                                }
-                            }
-                        }
-
-                    }
-
-                    // app level check
-                    return hasAppPermission(req).then((response) => {
-
-                        if (response.result) {
-                            return Promise.resolve()
-                        }
-
-                        // acl check
-                        const q = Object.assign({}, req)
-                        q.permission = { $in: [ q.permission, 'admin' ] }
-                        return api.models.Acl.find(req).then((acls) => {
-                            if(acls.filter((acl) => acl.allowed).length) {
-                                return Promise.resolve()
-                            }
-                            return Promise.reject(new errors.Forbidden())
-                        }).catch((e) => {
-                            logger.debug('User `%s` not allowed to `%s` on `%s`', req.user.username, req.permission, req.type)
-                            return Promise.reject(e)
-                        })
+                        return Promise.reject(new errors.Forbidden())
+                    }).catch((e) => {
+                        logger.debug('User `%s` not allowed to `%s` on `%s` %s',
+                            req.user.username,
+                            req.permission,
+                            req.type,
+                            (req.subject ? req.subject.id : req.subjectId)) || ''
+                        return Promise.reject(e)
                     })
                 })
-        })
+            })
+    }).catch((e) => {
+        logger.warn('Check failed: %s', e.message)
+        logger.debug(e.stack)
+        return Promise.reject(e)
     })
-        .catch((e) => {
-            logger.warn('Check failed: %s', e.message)
-            logger.debug(e.stack)
-            return Promise.reject(e)
-        })
 }
 
 
 const hasAppPermission = (req) => {
 
-    const raptor = require('./raptor').client()
+    if (!req.subject) {
+        logger.debug('Skip app check, missing subject')
+        return Promise.resolve({ result: false })
+    }
 
-    if (!req.subject || !req.subject.domain) {
+    // check
+    if(req.type === 'app') {
+
+        const app = req.subject
+
+        const appUsers = app.users.filter((u) => u.id === req.user.id)
+        if (appUsers.length === 0) {
+            logger.debug('User %s is not in app %s', req.user.id, app.id)
+            return Promise.resolve({ result: false })
+        }
+
+        const appUser = appUsers[0]
+        const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
+
+        const allowed = checkPermission({
+            req, roles: userAppRoles
+        })
+
+        return Promise.resolve({ result: allowed })
+    }
+
+    if (!req.domain) {
+        logger.debug('Skip app check, missing domain')
         return Promise.resolve({ result: false })
     }
 
     const q = {
-        users: [ req.user.id ]
+        id: req.subject.domain,
+        users: [ req.user.id ],
     }
 
     if(req.type === 'device') {
@@ -158,16 +232,13 @@ const hasAppPermission = (req) => {
             q.devices = [ req.subject.id ]
         }
     }
-    if(req.type === 'app') {
-        q.id = req.subject.id
-    }
 
     logger.debug('App lookup %j', q)
+    const raptor = require('./raptor').client()
     return raptor.App().search(q).then((pager) => {
 
         const allowed = pager.getContent().filter((app) => {
 
-            console.warn(JSON.stringify(app, null, 2))
             const r = {}
             app.roles.forEach((role) => r[role.name] = role)
 
@@ -200,7 +271,8 @@ const check = (opts) => {
 
     opts = opts || {}
     opts.permission = opts.permission || null
-    opts.type = opts.type || ''
+    opts.type = opts.type || null
+    opts.domain = opts.domain || null
     // if last === true and authz fails will throw a 401/403 and stop the request
     // used to have more granular permission checking on the single route
     // default: true (req fail if not authorized)
@@ -252,18 +324,20 @@ const check = (opts) => {
 
             let user = options.user || req.user
 
-            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s]',
+            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s domain=]',
                 user.username,
                 options.permission,
                 options.type,
-                options.subjectId || ''
+                options.subjectId || '',
+                options.domain || ''
             )
 
             return can({
                 user,
                 type: options.type || null,
                 permission: options.permission,
-                subjectId: options.subjectId || null
+                subjectId: options.subjectId || null,
+                domain: options.domain || null
             })
         }).then(()=> {
             req.isAuthorized = true
@@ -318,7 +392,7 @@ const getRequestEntityId = (type, req) => {
 
 const loader = (type, id) => {
 
-    logger.debug('Loading `%s` [id=%s]', type, id)
+    logger.debug('Loading type=%s id=%s', type, id)
     const sdk = require('./raptor').client()
 
     const loadType = () => {
