@@ -113,11 +113,12 @@ module.exports.router = (router) => {
     })
 
     router.delete('/:userId', function(req, res) {
-        return api.User.delete({ id: req.params.userId })
-            .then(() => {
-                logger.debug('Deleted user %s', req.params.userId)
-                res.status(202).send()
-            })
+        return api.User.read({ id: req.params.userId })
+            .then(() => api.User.delete({ id: req.params.userId })
+                .then(() => {
+                    logger.debug('Deleted user %s', req.params.userId)
+                    res.status(202).send()
+                }))
     })
 
     router.get('/:userId/impersonate', function(req, res) {

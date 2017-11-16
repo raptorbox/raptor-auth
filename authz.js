@@ -38,19 +38,14 @@ const loadDomain = (req) => {
         domain = req.subject.domain
     }
 
-    // console.warn('***************** load domain ', domain, req.subject)
-
     if(domain) {
 
         // skip call for app when subj === domain
         if(req.type === 'app' && (req.subject && req.subject.id === domain)) {
             req.domain = req.subject
-
-            // console.warn('***************** load domain: same subj ')
             return Promise.resolve()
         }
 
-        // console.warn('***************** load domain app:' + domain)
         return loader('app', domain).then((d) => {
             req.domain = d
             return Promise.resolve()
@@ -196,59 +191,33 @@ const hasAppPermission = (req) => {
         return Promise.resolve({ result: false })
     }
 
-    // check
-    if(req.type === 'app') {
-
-        const app = req.subject
-
-        const appUsers = app.users.filter((u) => u.id === req.user.id)
-        if (appUsers.length === 0) {
-            logger.debug('User %s is not in app %s', req.user.id, app.id)
-            return Promise.resolve({ result: false })
-        }
-
-        const appUser = appUsers[0]
-        const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
-
-        const allowed = checkPermission({
-            req, roles: userAppRoles
-        })
-
-        return Promise.resolve({ result: allowed })
+    let app = req.domain
+    if (!app && (req.type === 'app' && req.subject)) {
+        app = req.subject
     }
 
-    if (!req.domain) {
+    if (!app) {
         logger.debug('Skip app check, missing domain')
         return Promise.resolve({ result: false })
     }
 
-    const q = {
-        id: req.subject.domain,
-        users: [ req.user.id ],
+    console.warn("********* domain", JSON.stringify(req.domain, null, 2))
+    console.warn("********* subject", JSON.stringify(req.subject, null, 2))
+
+    const appUsers = app.users.filter((u) => u.id === req.user.id)
+    if (appUsers.length === 0) {
+        logger.debug('User %s is not in app %s', req.user.id, app.id)
+        return Promise.resolve({ result: false })
     }
 
-    if(req.type === 'device') {
-        if (req.subject) {
-            q.devices = [ req.subject.id ]
-        }
-    }
+    const appUser = appUsers[0]
+    const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
 
-    logger.debug('App lookup %j', q)
-    const raptor = require('./raptor').client()
-    return raptor.App().search(q).then((pager) => {
-
-        const allowed = pager.getContent().filter((app) => {
-
-            const r = {}
-            app.roles.forEach((role) => r[role.name] = role)
-
-            return app.users.filter((u) => {
-                u.roles
-            })
-        }).length > 0
-
-        return Promise.resolve({ result: allowed })
+    const allowed = checkPermission({
+        req, roles: userAppRoles
     })
+
+    return Promise.resolve({ result: allowed })
 }
 
 // route level check to close the authorization process, when opts.last != true.
@@ -409,7 +378,7 @@ const loader = (type, id) => {
         case 'device':
             return sdk.Inventory().read({ id })
         case 'tree':
-            return sdk.Tree().tree({ id })
+            return sdk.Tree().read({ id })
         case 'app':
             return sdk.App().read({ id })
         default:
