@@ -121,6 +121,9 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(id, done) {
     api.models.User.findById(id)
         .then((user) => {
+            if(!user) {
+                return done(new Error('Cannot deserialize user'), null)
+            }
             done(null, user)
         })
         .catch((err) => {

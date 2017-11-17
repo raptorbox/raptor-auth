@@ -38,7 +38,8 @@ l.get = (key, Model) => {
     return new Promise(function (resolve, reject) {
         cache.get(key, function (err, val) {
             if (err) return reject(err)
-            if (Model) {
+
+            if (val && Model) {
                 val = Model.hydrate(val)
             }
             resolve(val)
