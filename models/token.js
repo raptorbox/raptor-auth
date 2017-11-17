@@ -117,7 +117,8 @@ Token.methods.merge = function(t) {
             if (t.name) {
                 token.name = t.name
             }
-            if (t.secret) {
+
+            if (t.secret && t.secret !== token.secret) {
                 token.secret = t.secret
             }
 

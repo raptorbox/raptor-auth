@@ -7,14 +7,14 @@ const broker = require('../broker')
 const cache = require('../cache')
 
 const notify = (op, token) => {
-    broker.send({type: 'token', id: token.id, op, token})
+    broker.send({ type: 'token', id: token.id, op, token })
     return Promise.resolve(token)
 }
 
 l.createLogin = (user) => {
     const t1 = Date.now()
     return l.create({
-        name: 'login_'+t1,
+        name: 'login_' + t1,
         type: 'LOGIN',
         userId: user.id,
     })
@@ -28,14 +28,14 @@ l.list = (query, pager) => {
 
 l.read = (query) => {
     let p = Promise.resolve()
-    if(query && query.id) {
-        p = cache.get(`token_${query.id}`, Token)            
+    if (query && query.id) {
+        p = cache.get(`token_${query.id}`, Token)
     }
     return p.then((token) => {
         if (token) return Promise.resolve(token)
         return Token.findOne(query)
             .then((token) => {
-                if(!token) throw new errors.NotFound()
+                if (!token) throw new errors.NotFound()
                 return Promise.resolve(token)
             })
     })
@@ -70,7 +70,7 @@ l.delete = (token) => {
 l.save = (t) => {
     return l.update(t)
         .catch((e) => {
-            if(e instanceof errors.NotFound) {
+            if (e instanceof errors.NotFound) {
                 return l.create(t)
             }
             return Promise.reject(e)

@@ -25,22 +25,21 @@ l.close = () => {
 }
 
 l.set = (key, val, ttl) => {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         const json = val.toObject ? val.toObject() : val
-        cache.set(key, json, ttl || defaultTTL, function(err) {
-            if(err) return reject(err)
+        cache.set(key, json, ttl || defaultTTL, function (err) {
+            if (err) return reject(err)
             resolve(val)
         })
     })
 }
 
 l.get = (key, Model) => {
-    return new Promise(function(resolve, reject) {
-        cache.get(key, function(err, val) {
-            if(err) return reject(err)
-            if(Model) {
-                val = new Model(val)
-                val.isNew = false
+    return new Promise(function (resolve, reject) {
+        cache.get(key, function (err, val) {
+            if (err) return reject(err)
+            if (Model) {
+                val = Model.hydrate(val)
             }
             resolve(val)
         })
@@ -48,9 +47,9 @@ l.get = (key, Model) => {
 }
 
 l.del = (key) => {
-    return new Promise(function(resolve, reject) {
-        cache.del(key, function(err) {
-            if(err) return reject(err)
+    return new Promise(function (resolve, reject) {
+        cache.del(key, function (err) {
+            if (err) return reject(err)
             resolve()
         })
     })
