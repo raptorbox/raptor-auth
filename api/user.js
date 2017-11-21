@@ -49,13 +49,16 @@ l.create = (u) => {
         .then((user) => notify('create', user))
 }
 
-l.delete = (user) => {
-    return User.remove({ id: user.id })
-        .then((user) => {
+l.delete = ({ id }) => {
+    if (!id) {
+        return Promise.reject(new errors.BadRequest('Missing user id'))
+    }
+    return l.read({ id }).then((user) =>
+        user.remove().then((user) => {
             return cache.del(`user_${user.id}`)
                 .then(() => Promise.resolve(user))
-        })
-        .then((user) => notify('delete', user))
+        }).then((user) => notify('delete', user))
+    )
 }
 
 l.save = (u) => {

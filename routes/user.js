@@ -40,7 +40,8 @@ module.exports.router = (router) => {
      */
 
     router.get('/', function(req, res) {
-        return api.User.list({}, req.params)
+        const q = {}
+        return api.User.list(q, req.params)
             .then((users) => {
                 logger.debug('Found %s users', users.length)
                 res.json(users)

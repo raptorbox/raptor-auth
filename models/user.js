@@ -143,7 +143,7 @@ User.methods.isService = function() {
 }
 
 User.methods.isAdmin = function() {
-    return this.get('roles').indexOf('admin') > -1
+    return this.isService() || this.get('roles').indexOf('admin') > -1
 }
 
 User.statics.validPassword = function(password, hash) {
