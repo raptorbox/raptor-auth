@@ -41,7 +41,7 @@ module.exports.router = (router) => {
 
     router.get('/', function(req, res) {
         const q = {}
-        return api.User.list(q, req.params)
+        return api.User.list(q, req.query)
             .then((users) => {
                 logger.debug('Found %s users', users.length)
                 res.json(users)

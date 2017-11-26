@@ -14,6 +14,14 @@ const notify = (op, user) => {
 l.list = (query, pager) => {
     query = query || {}
     pager = pager || {}
+
+    query.$and = query.$and || []
+    query.$and.push({
+        roles: {
+            $nin: ['service']
+        }
+    })
+
     return User.findPaged(query, pager)
 }
 

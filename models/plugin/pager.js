@@ -9,14 +9,14 @@ module.exports = function (schema, options) {
         paging = paging || {}
 
         // validate input
-        if (paging.size && (paging.size*1 != paging.size)) {
-            paging.size = null
+        if (paging.limit && (paging.limit*1 != paging.limit)) {
+            paging.size = 25
         }
-        if(paging.size > 1000) {
-            paging.size = 1000
+        if(paging.limit > 1000) {
+            paging.limit = 1000
         }
         if (paging.page && (paging.page*1 != paging.page)) {
-            paging.page = null
+            paging.page = 0
         }
         if (paging.sort && (typeof paging.sort !== 'string' || paging.sort.length > 18)) {
             paging.sort = null
@@ -27,31 +27,45 @@ module.exports = function (schema, options) {
             page = Math.max(0, paging.page - 1)
         }
 
-        let size = 50
-        if(paging.size) {
-            size = Math.max(0, paging.size * 1)
+        let limit = 50
+        if(paging.limit) {
+            limit = Math.max(0, paging.limit * 1)
         }
 
-        let sort = paging.sort || {}
-        if(typeof sort === 'string') {
-            let s = {}
-            s[sort] = 1
-            sort = s
+        let sort = {}
+        let sortInfo = {}
+        if(paging.sort && typeof paging.sort === 'string') {
+
+            const p = paging.sort.split(',')
+            const isAsc = p[1] && p[1].toLowerCase() === 'asc'
+            sortInfo.property = p[0]
+            sortInfo.direction =  isAsc ? 'asc' : 'desc'
+            sortInfo.ascending = isAsc
+            sortInfo.descending = !isAsc
+
+            sort[sortInfo.property] = isAsc ? 1 : -1
         }
 
         return M.find(query).count()
             .then((len) => {
+                const totalPages = Math.floor(len / limit)
                 return M.find(query)
                     .sort(sort)
-                    .skip(page * size)
-                    .limit(size)
+                    .skip(page * limit)
+                    .limit(limit)
                     .exec()
                     .then((records) => {
                         return Promise.resolve({
+                            first: page === 0,
+                            last: page === totalPages,
+                            number: page,
+                            totalPages: totalPages,
+                            totalElements: len,
+                            numberOfElements: records.length,
+                            sort: [sortInfo],
                             total: len,
+                            size: limit,
                             page: page,
-                            size: size,
-                            sort: sort,
                             content: records.map((r) => new M(r))
                         })
                     })
