@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="5.0.6"></a>
+## [5.0.6](https://github.com/raptorbox/raptor-auth/compare/v5.0.5...v5.0.6) (2017-12-06)
+
+
+
 <a name="5.0.4"></a>
 ## [5.0.4](https://github.com/muka/raptor-auth/compare/v5.0.3...v5.0.4) (2017-11-11)
 
