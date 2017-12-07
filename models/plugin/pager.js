@@ -9,8 +9,8 @@ module.exports = function (schema, options) {
         paging = paging || {}
 
         // validate input
-        if (paging.limit && (paging.limit*1 != paging.limit)) {
-            paging.size = 25
+        if (paging.size && !isNaN(paging.size)) {
+            paging.limit = paging.size
         }
         if(paging.limit > 1000) {
             paging.limit = 1000
