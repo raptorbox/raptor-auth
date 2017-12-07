@@ -62,6 +62,7 @@ module.exports = function (schema, options) {
                             totalPages: totalPages,
                             totalElements: len,
                             numberOfElements: records.length,
+                            length: records.length,
                             sort: [sortInfo],
                             total: len,
                             size: limit,

@@ -12,6 +12,7 @@ const notify = (op, user) => {
 }
 
 l.list = (query, pager) => {
+
     query = query || {}
     pager = pager || {}
 

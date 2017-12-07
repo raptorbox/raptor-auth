@@ -41,6 +41,10 @@ module.exports.router = (router) => {
 
     router.get('/', function(req, res) {
         const q = {}
+        if (req.query.username) {
+            q.username = req.query.username
+            delete req.query.username
+        }
         return api.User.list(q, req.query)
             .then((users) => {
                 logger.debug('Found %s users', users.length)
