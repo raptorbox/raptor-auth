@@ -86,6 +86,7 @@ module.exports.router = (router) => {
                         logger.debug('Valid token %s [user=%s type=%s expires=%s]', token.name, user.username, token.type, token.expires || '0')
                         const json = user.toJSON()
                         json.roles = roles
+                        json.token = token.toJSON()
                         res.json(json)
                     })
                 })
