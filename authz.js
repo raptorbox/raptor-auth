@@ -72,21 +72,25 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
     logger.debug('Check `%s_%s` userId=%s subjectId=%s domain=%s',
         req.permission,
         req.type,
-        req.subject ? req.subject.id : '',
         req.user.id,
+        req.subject ? req.subject.id : '',
         req.domain ? req.domain.id : '')
 
     if(has('admin') || has('service')) {
         return true
     }
 
-    // allow create on admin_own*
+    // allow create and list/search on admin_own*
     if( !req.subject && (req.permission === 'create' || req.permission === 'read')) {
         if(has('admin_own')) {
             return true
         }
-        if(req.type && has('admin_own_' + req.type)) {
-            return true
+        if(req.type) {
+            if (//has('admin_own_' + req.type) ||
+                has('create_own_' + req.type) ||
+                    has('read_own_' + req.type)) {
+                return true
+            }
         }
     }
 
@@ -201,9 +205,6 @@ const hasAppPermission = (req) => {
         return Promise.resolve({ result: false })
     }
 
-    console.warn("********* domain", JSON.stringify(req.domain, null, 2))
-    console.warn("********* subject", JSON.stringify(req.subject, null, 2))
-
     const appUsers = app.users.filter((u) => u.id === req.user.id)
     if (appUsers.length === 0) {
         logger.debug('User %s is not in app %s', req.user.id, app.id)
@@ -214,7 +215,11 @@ const hasAppPermission = (req) => {
     const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
 
     const allowed = checkPermission({
-        req, roles: userAppRoles
+        req, roles: userAppRoles,
+        hasOwnership: () => {
+            return isOwner(req.type, req.subject, req.user) ||
+                appUsers.filter((u) => u.id === req.user.id)
+        }
     })
 
     return Promise.resolve({ result: allowed })
