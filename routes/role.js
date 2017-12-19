@@ -36,13 +36,7 @@ module.exports.router = (router) => {
             })
     })
 
-    const save = (req, res) => {
-
-        const r = Object.assign({}, req.body)
-
-        if(req.params.id) {
-            r.id = req.params.id
-        }
+    const save = (r, res) => {
 
         if(isReservedRole(r)) {
             return Promise.reject(new require('../errors').BadRequest(`Role '${r.name}' is reserved`))
@@ -56,10 +50,20 @@ module.exports.router = (router) => {
     }
 
     router.post('/', function(req, res) {
-        return save(req, res)
+
+        const body = Object.assign({}, req.body)
+        if (body.id)  {
+            delete body.id
+        }
+
+        return save(body, res)
     })
     router.put('/:id', function(req, res) {
-        return save(req, res)
+
+        const body = Object.assign({}, req.body)
+        body.id = req.params.id
+
+        return save(body, res)
     })
 
     router.delete('/:id', function(req, res) {
