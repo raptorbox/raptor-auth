@@ -215,11 +215,7 @@ const hasAppPermission = (req) => {
     const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
 
     const allowed = checkPermission({
-        req, roles: userAppRoles,
-        hasOwnership: () => {
-            return isOwner(req.type, req.subject, req.user) ||
-                appUsers.filter((u) => u.id === req.user.id)
-        }
+        req, roles: userAppRoles
     })
 
     return Promise.resolve({ result: allowed })
