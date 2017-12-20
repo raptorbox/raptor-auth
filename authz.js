@@ -74,7 +74,8 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
         req.type,
         req.user.id,
         req.subject ? req.subject.id : '',
-        req.domain ? req.domain.id : '')
+        req.domain ? req.domain.id : ''
+    )
 
     if(has('admin') || has('service')) {
         return true
@@ -86,9 +87,9 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
             return true
         }
         if(req.type) {
-            if (//has('admin_own_' + req.type) ||
-                has('create_own_' + req.type) ||
-                    has('read_own_' + req.type)) {
+            if (has('admin_own_' + req.type) ||
+                    has('create_own_' + req.type) ||
+                        has('read_own_' + req.type)) {
                 return true
             }
         }
@@ -190,35 +191,47 @@ const can = (req) => {
 
 const hasAppPermission = (req) => {
 
-    if (!req.subject) {
-        logger.debug('Skip app check, missing subject')
-        return Promise.resolve({ result: false })
-    }
-
     let app = req.domain
-    if (!app && (req.type === 'app' && req.subject)) {
-        app = req.subject
-    }
+    // if (!app && (req.type === 'app' && req.subject)) {
+    //     app = req.subject
+    // }
 
     if (!app) {
         logger.debug('Skip app check, missing domain')
         return Promise.resolve({ result: false })
     }
 
-    const appUsers = app.users.filter((u) => u.id === req.user.id)
-    if (appUsers.length === 0) {
-        logger.debug('User %s is not in app %s', req.user.id, app.id)
-        return Promise.resolve({ result: false })
-    }
+    return Promise.resolve().then(() => {
 
-    const appUser = appUsers[0]
-    const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
+        const appUsers = app.users.filter((u) => u.id === req.user.id)
+        if (appUsers.length === 0) {
+            logger.debug('User %s is not in app %s', req.user.id, app.id)
+            return Promise.resolve({ result: false })
+        }
 
-    const allowed = checkPermission({
-        req, roles: userAppRoles
+        const appUser = appUsers[0]
+        const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
+
+        const result = checkPermission({
+            req, roles: userAppRoles
+        })
+
+        return Promise.resolve({ result })
+    }).then(({result}) => {
+
+        if (!result && app.domain) {
+            return loader('app', app.domain).then((parentApp) => {
+                const req2 = Object.assign({}, req, { domain: parentApp })
+                return hasAppPermission(req2)
+            }).catch((e) => {
+                logger.error('Failed to load parent app: %s', e.message)
+                return Promise.resolve({ result: false })
+            })
+        }
+
+        return Promise.resolve({ result })
     })
 
-    return Promise.resolve({ result: allowed })
 }
 
 // route level check to close the authorization process, when opts.last != true.
@@ -261,6 +274,8 @@ const check = (opts) => {
             switch (req.method.toLowerCase()) {
             case 'post':
                 options.permission = 'create'
+                // reset id on create as may be user provided
+                options.subjectId = null
                 break
             case 'get':
                 options.permission = 'read'
