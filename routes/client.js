@@ -1,5 +1,6 @@
 var logger = require('../logger')
 var api = require('../api')
+const qp = require('../query-parser')
 
 module.exports.router = (router) => {
 
@@ -21,7 +22,13 @@ module.exports.router = (router) => {
      *         type: boolean
      */
     router.get('/', function(req, res) {
-        return api.Client.list({}, req.params)
+
+        let p = qp.parse({
+            params: req.query,
+            queryFields: [ 'name', 'id', 'userId', 'enabled' ]
+        })
+
+        return api.Client.list(p.query, p.pager)
             .then((clients) => {
                 logger.debug('Found %s clients', clients.length)
                 res.json(clients)

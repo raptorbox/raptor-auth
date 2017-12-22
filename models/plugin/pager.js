@@ -44,6 +44,8 @@ module.exports = function (schema, options) {
             sortInfo.descending = !isAsc
 
             sort[sortInfo.property] = isAsc ? 1 : -1
+        } else {
+            sortInfo = null
         }
 
         return M.find(query).count()
@@ -63,7 +65,7 @@ module.exports = function (schema, options) {
                             totalElements: len,
                             numberOfElements: records.length,
                             length: records.length,
-                            sort: [sortInfo],
+                            sort: sortInfo ? [sortInfo] : [],
                             total: len,
                             size: limit,
                             page: page,

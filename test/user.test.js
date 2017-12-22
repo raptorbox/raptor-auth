@@ -58,7 +58,7 @@ describe('auth service', function () {
                     let sort = 'created'
                     let sortDir = 'desc'
                     return Promise.all(users)
-                        .then(() => r.Admin().User().list({ page, size, sort, sortDir }))
+                        .then(() => r.Admin().User().list({}, { page, size, sort, sortDir }))
                         .then((pager) => {
 
                             assert.equal(pager.getContent().length, size)

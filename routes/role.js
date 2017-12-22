@@ -2,6 +2,7 @@
 const logger = require('../logger')
 const api = require('../api')
 const config = require('../config')
+const qp = require('../query-parser')
 
 // disallow configuration managed roles
 const isReservedRole = (r) => {
@@ -10,26 +11,14 @@ const isReservedRole = (r) => {
 
 module.exports.router = (router) => {
 
-    /**
-     * @swagger
-     * definitions:
-     *   Role:
-     *     type: object
-     *     required:
-     *       - name
-     *       - permissions
-     *     properties:
-     *       role:
-     *         type: string
-     *       permissions:
-     *         type: array
-     *         items:
-     *           type: string
-     */
-
     router.get('/', function(req, res) {
-        const q = {}
-        return api.Role.list(q, req.query)
+
+        let p = qp.parse({
+            params: req.query,
+            queryFields: [ 'name', 'id', 'domain' ]
+        })
+
+        return api.Role.list(p.query, p.pager)
             .then((roles) => {
                 logger.debug('Found %s roles', roles.content.length)
                 res.json(roles)

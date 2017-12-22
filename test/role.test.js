@@ -20,6 +20,21 @@ describe('auth service', function () {
 
     describe('Role API', function () {
 
+        it('should list roles', function () {
+            return util.getRaptor()
+                .then(function (r) {
+                    const role = newRole()
+                    return r.Admin().Role().create(role)
+                        .then((role)=> {
+                            return r.Admin().Role().list({ name: role.name }, { limit: 10 }).then((p) => {
+                                assert.equal(1, p.getContent().length)
+                                assert.equal(role.name, p.getContent()[0].name)
+                                return Promise.resolve()
+                            })
+                        })
+                })
+        })
+
         it('should create a role', function () {
             return util.getRaptor()
                 .then(function (r) {
