@@ -7,11 +7,12 @@ l.initialize = () => {
     if (cache) return Promise.resolve()
 
     const cacheManager = require('cache-manager'),
-        redisStore = require('cache-manager-redis-store')
+        redisStore = require('cache-manager-redis-store'),
+        config = require('./config')
 
     cache = cacheManager.caching({
         store: redisStore,
-        host: 'redis',
+        host: config.redis.host,
         db: 0,
         ttl: 600
     })
