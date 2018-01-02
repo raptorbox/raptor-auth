@@ -1,6 +1,6 @@
 {
   "name": "raptor-auth",
-  "version": "5.0.12",
+  "version": "5.0.13",
   "description": "",
   "main": "./bin/cli.js",
   "scripts": {
