@@ -1,6 +1,6 @@
 {
   "name": "raptor-auth",
-  "version": "5.0.6",
+  "version": "5.0.15",
   "description": "",
   "main": "./bin/cli.js",
   "scripts": {
@@ -23,7 +23,7 @@
     "express": "^4.16.2",
     "express-promise-router": "^2.0.0",
     "mongoose": "^4.12.5",
-    "mqtt": "^2.13.1",
+    "mqtt": "^2.15.0",
     "node-uuid": "^1.4.8",
     "oauth2orize": "^1.11.0",
     "passport": "^0.4.0",
@@ -31,7 +31,7 @@
     "passport-http-bearer": "^1.0.1",
     "passport-local": "^1.0.0",
     "passport-oauth2-client-password": "^0.1.2",
-    "raptor-sdk": "^5.0.8",
+    "raptor-sdk": "^5.0.18",
     "swagger-jsdoc": "^1.9.7",
     "uuid": "^3.1.0",
     "winston": "^2.4.0"

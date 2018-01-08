@@ -14,55 +14,31 @@ module.exports.router = (router) => {
     const logger = require('../logger')
     const api = require('../api')
     const errors = require('../errors')
+    const qp = require('../query-parser')
 
-    /**
-     * @swagger
-     * definitions:
-     *   CreateTokenRequest:
-     *     type: object
-     *     required:
-     *       - name
-     *       - secret
-     *       - expires
-     *       - enabled
-     *     properties:
-     *       name:
-     *         type: string
-     *       secret:
-     *         type: string
-     *         format: password
-     *       expires:
-     *         type: date
-     *       enabled:
-     *         type: boolean
-     *   Token:
-     *     allOf:
-     *       - $ref: '#/definitions/CreateTokenRequest'
-     *       - required:
-     *         - token
-     *         - userId
-     *       - properties:
-     *         userId:
-     *           type: string
-     *         token:
-     *           type: string
-     */
     router.get('/', function(req, res) {
-        const q = {
+
+        let p = qp.parse({
+            params: req.query,
+            queryFields: [ 'name', 'id', 'enabled' ]
+        })
+
+        const q = Object.assign({}, p.query, {
             type: 'DEFAULT'
-        }
+        })
+
         let uid = null
-        if(req.query.userId) {
-            uid = req.query.userId
-            delete req.query.userId
+        if(p.query.userId) {
+            uid = p.query.userId
         }
         if(!req.user.isAdmin()) {
-            uid = req.user.id
+            uid = p.query.userId
         }
         if(uid) {
             q.userId = uid
         }
-        return api.Token.list(q, req.query)
+
+        return api.Token.list(q, p.pager)
             .then((tokens) => {
                 logger.debug('Found %s tokens', tokens.content.length)
                 res.json(tokens)

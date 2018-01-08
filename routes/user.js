@@ -2,78 +2,22 @@ module.exports.router = (router) => {
 
     const logger = require('../logger')
     const api = require('../api')
-
-    /**
-     * @swagger
-     * definitions:
-     *   LoginRequest:
-     *     type: object
-     *     required:
-     *       - username
-     *       - password
-     *     properties:
-     *       username:
-     *         type: string
-     *       password:
-     *         type: string
-     *         format: password
-     *   User:
-     *     allOf:
-     *       - $ref: '#/definitions/LoginRequest'
-     *       - required:
-     *         - id
-     *         - email
-     *         - enabled
-     *         - roles
-     *       - properties:
-     *         id:
-     *           type: string
-     *         email:
-     *           type: string
-     *           format: email
-     *         enabled:
-     *           type: boolean
-     *         roles:
-     *           type: array
-     *           items:
-     *             type: string
-     */
+    const qp = require('../query-parser')
 
     router.get('/', function(req, res) {
-        const q = {}
-        if (req.query.username) {
-            q.username = req.query.username
-            delete req.query.username
-        }
-        return api.User.list(q, req.query)
+
+        let p = qp.parse({
+            params: req.query,
+            queryFields: [ 'username', 'id', 'email', 'enabled' ]
+        })
+
+        return api.User.list(p.query, p.pager)
             .then((users) => {
                 logger.debug('Found %s users', users.length)
                 res.json(users)
             })
     })
 
-    /**
-     * @swagger
-     * /user:
-     *   post:
-     *     tags:
-     *       - User
-     *     description: Creates a new user
-     *     produces:
-     *       - application/json
-     *     parameters:
-     *       - name: user
-     *         description: User object
-     *         in: body
-     *         required: true
-     *         schema:
-     *           $ref: '#/definitions/User'
-     *     responses:
-     *       200:
-     *         description: Created
-     *         schema:
-     *           $ref: '#/definitions/User'
-     */
     router.post('/', function(req, res) {
 
         const user = Object.assign({}, req.body)

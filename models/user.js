@@ -97,6 +97,8 @@ User.methods.merge = function(u) {
 
             if (u.roles) {
                 user.roles = u.roles
+                    .map((r) => (typeof r === 'string' ? r : r.name || null))
+                    .filter((r) => (r !== null))
             }
 
             if (u.fullName) {

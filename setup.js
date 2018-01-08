@@ -41,9 +41,9 @@ const createDefaultRoles = () => {
 }
 
 const createDefaultToken = () => {
-    return api.User.read({ username: 'service' })
+    return api.User.read({ username: config.users.service.username })
         .then((u) => {
-            return api.models.Token.findOne({ name: 'service-default', userId: u.id })
+            return api.models.Token.findOne({ name: config.serviceToken, userId: u.id })
                 .then((token) => {
                     if(token) {
                         return Promise.resolve(token)
