@@ -42,6 +42,10 @@ const User = new Schema({
     created: {
         type: Date,
         default: Date.now
+    },
+    ownerId: {
+        type: String,
+        ref: 'User'
     }
 }, {
     toJSON: {
@@ -109,6 +113,9 @@ User.methods.merge = function(u) {
                 user.enabled = u.enabled
             }
 
+            if(u.ownerId) {
+                user.ownerId = u.ownerId
+            }
             return Promise.resolve()
         })
         .then(() => {

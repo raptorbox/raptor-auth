@@ -54,6 +54,17 @@ l.newUser = (username) => {
     return u
 }
 
+l.newUserWithOwnerId = (ownerId) => {
+    const username = l.randomName('user')
+    const u = new Raptor.models.User()
+    u.username = username
+    u.password = 'passwd_' + u.username
+    u.email = u.username + '@test.raptor.local'
+    u.roles = ['user']
+    u.ownerId = ownerId 
+    return u
+}
+
 l.createUserInstance = (roles) => {
     return l.getRaptor()
         .then((r) => {
@@ -68,6 +79,14 @@ l.createUserInstance = (roles) => {
                     return r2.Auth().login()
                         .then(() => Promise.resolve(r2))
                 })
+        })
+}
+
+l.createUserInstanceWithOwner = (ownerId) => {
+    return l.getRaptor()
+        .then((r) => {
+            const u = l.newUserWithOwnerId(ownerId)
+            return r.Admin().User().create(u)
         })
 }
 

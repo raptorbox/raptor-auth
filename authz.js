@@ -89,7 +89,7 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
         if(req.type) {
             if (has('admin_own_' + req.type) ||
                     has('create_own_' + req.type) ||
-                        has('read_own_' + req.type)) {
+                        has('read_own_' + req.type)) {                
                 return true
             }
         }
@@ -99,6 +99,12 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
         if(has(`admin_${req.type}`)) {
             return true
         }
+        
+        // allow delete / other operations when user has permision on entities he own
+        // if(has(`admin_own_${req.type}`) || has(`${req.permission}_own_${req.type}`)) {
+        //     return true
+        // }
+
         if(has(`${req.permission}_${req.type}`)) {
             return true
         }
@@ -147,7 +153,7 @@ const can = (req) => {
 
         return req.user.loadRoles()
             .then((roles) => {
-
+                
                 const allowed = checkPermission({
                     roles, req,
                     hasOwnership: () => isOwner(req.type, req.subject, req.user)
@@ -155,7 +161,7 @@ const can = (req) => {
                 if(allowed) {
                     return Promise.resolve()
                 }
-
+                
                 // app level check
                 return hasAppPermission(req).then((response) => {
 
@@ -166,13 +172,14 @@ const can = (req) => {
                     // acl check
                     const q = Object.assign({}, req)
                     q.permission = { $in: [ q.permission, 'admin' ] }
+                    
                     return api.models.Acl.find(req).then((acls) => {
                         if(acls.filter((acl) => acl.allowed).length) {
                             return Promise.resolve()
                         }
                         return Promise.reject(new errors.Forbidden())
                     }).catch((e) => {
-                        logger.debug('User `%s` not allowed to `%s` on `%s` %s',
+                        logger.debug('User `%s` not allowed to `%s` on `%s` subject %s',
                             req.user.username,
                             req.permission,
                             req.type,
@@ -215,7 +222,7 @@ const hasAppPermission = (req) => {
         const result = checkPermission({
             req, roles: userAppRoles
         })
-
+           
         return Promise.resolve({ result })
     }).then(({result}) => {
 
@@ -308,8 +315,14 @@ const check = (opts) => {
             }
 
             let user = options.user || req.user
+            
+            options.domain = req.body.domain || options.domain
 
-            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s domain=]',
+            if(options.type && options.type == 'user' && !options.domain) {
+                options.domain = req.query.domain 
+            }
+            
+            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s domain=%s]',
                 user.username,
                 options.permission,
                 options.type,
@@ -345,6 +358,7 @@ const check = (opts) => {
 const isOwner = (type, subject, user) => {
     switch (type) {
     case 'user':
+        return subject.ownerId === user.id
     case 'profile':
         return subject.id === user.id
     case 'role':

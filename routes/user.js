@@ -6,9 +6,15 @@ module.exports.router = (router) => {
 
     router.get('/', function(req, res) {
 
+        let queryFields = [ 'username', 'id', 'email', 'enabled' ]
+
+        if(req.query.ownerId) {
+            queryFields.push('ownerId')
+        }
+
         let p = qp.parse({
             params: req.query,
-            queryFields: [ 'username', 'id', 'email', 'enabled' ]
+            queryFields: queryFields
         })
 
         return api.User.list(p.query, p.pager)
