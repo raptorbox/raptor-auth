@@ -321,6 +321,8 @@ const check = (opts) => {
             if(options.type && options.type == 'user' && !options.domain) {
                 options.domain = req.query.domain 
             }
+
+            // logger.debug(require('util').inspect(req))
             
             logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s domain=%s]',
                 user.username,
