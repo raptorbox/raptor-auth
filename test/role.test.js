@@ -42,6 +42,10 @@ describe('auth service', function () {
                     return r.Admin().Role().create(role)
                         .then((role)=> {
                             return r.Admin().Role().read(role)
+                                .then((ro) => {
+                                    assert.equal(role.id, ro.id)
+                                    return Promise.resolve()
+                                })
                         })
                 })
         })

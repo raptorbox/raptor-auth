@@ -277,6 +277,10 @@ const check = (opts) => {
             return next()
         }
 
+        if(options.subjectId == null) {
+            options.subjectId = getRequestEntityId(options.type, req)
+        }
+
         if (options.permission === null) {
             switch (req.method.toLowerCase()) {
             case 'post':
@@ -309,10 +313,6 @@ const check = (opts) => {
         }
 
         return authorized.then(() => {
-
-            if(options.subjectId == null) {
-                options.subjectId = getRequestEntityId(options.type, req)
-            }
 
             let user = options.user || req.user
             
@@ -376,16 +376,26 @@ const isOwner = (type, subject, user) => {
     }
 }
 
+//pattern based /<api>/<id>
+const getId = (req, required = false) => {
+    const pcs = req.url.split('?')[0] 
+    const id = pcs.split('/')[1]
+    if (required && !id) throw new errors.BadRequest('Cannot parse id')
+    return id    
+}
+
+
 const getRequestEntityId = (type, req) => {
     switch (type) {
     case 'user':
-        return req.params.userId
+        return getId(req)
     case 'token':
-        return req.params.id
+        return null
     case 'role':
-        return req.params.id
+        if(req.body.name == getId(req))
+            return null
     case 'client':
-        return req.params.clientId
+        return getId(req)
     default:
         return null
     }
