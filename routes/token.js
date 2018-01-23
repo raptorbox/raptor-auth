@@ -28,9 +28,9 @@ module.exports.router = (router) => {
         })
 
         let uid = null
-        if(p.query.userId) {
-            uid = p.query.userId
-        }
+        // if(p.query.userId) {
+        //     uid = p.query.userId
+        // }
         if(!req.user.isAdmin()) {
             uid = p.query.userId
             if(req.query.userId && !p.query.userId) {

@@ -89,7 +89,7 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
         if(req.type) {
             if (has('admin_own_' + req.type) ||
                     has('create_own_' + req.type) ||
-                        has('read_own_' + req.type)) {                
+                        has('read_own_' + req.type)) {
                 return true
             }
         }
@@ -99,7 +99,7 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
         if(has(`admin_${req.type}`)) {
             return true
         }
-        
+
         // allow delete / other operations when user has permision on entities he own
         // if(has(`admin_own_${req.type}`) || has(`${req.permission}_own_${req.type}`)) {
         //     return true
@@ -131,6 +131,79 @@ const checkPermission = ({ roles, req, hasOwnership }) => {
     return false
 }
 
+const loadTokenPermission = (req) => {
+    if(!req.token) {
+        logger.debug('Skip token check, missing token')
+        return Promise.resolve({ result: false })
+    }
+
+    return loader('permission', req.token).then((perms) => {
+        if(perms.length == 0) {
+            return Promise.resolve(perms)
+        }
+
+        // logger.debug('=========================',perms)
+
+        const has = (p) => {
+            const hasPerm = perms.indexOf(p) > -1
+            if(hasPerm) {
+                logger.debug('Token `%s` can `%s`', req.token.name, p)
+            }
+            return hasPerm
+        }
+
+        if(has('admin') || has('service')) {
+            return Promise.resolve(true)
+        }
+
+        // allow create and list/search on admin_own*
+        if( !req.subject && (req.permission === 'create' || req.permission === 'read')) {
+            if(has('admin_own')) {
+                return Promise.resolve(true)
+            }
+            if(req.type) {
+                if (has('admin_own_' + req.type) ||
+                        has('create_own_' + req.type) ||
+                            has('read_own_' + req.type)) {
+                    return Promise.resolve(true)
+                }
+            }
+        }
+
+        if(req.type) {
+            if(has(`admin_${req.type}`)) {
+                return Promise.resolve(true)
+            }
+
+            // allow delete / other operations when user has permision on entities he own
+            // if(has(`admin_own_${req.type}`) || has(`${req.permission}_own_${req.type}`)) {
+            //     return true
+            // }
+
+            if(has(`${req.permission}_${req.type}`)) {
+                return Promise.resolve(true)
+            }
+        }
+
+        if(req.subject) {
+            if(has('admin_own')) {
+                return Promise.resolve(true)
+            }
+            if(req.type) {
+                //admin_own_device
+                if(has('admin_own_' + req.type)) {
+                    return Promise.resolve(true)
+                }
+                //read_own_device
+                if(has(req.permission + '_own_' + req.type)) {
+                    return Promise.resolve(true)
+                }
+            }
+        }
+        return Promise.resolve(false)
+    })
+}
+
 const can = (req) => {
 
     return loadUser(req).then(() => {
@@ -153,40 +226,66 @@ const can = (req) => {
 
         return req.user.loadRoles()
             .then((roles) => {
-                
+
                 const allowed = checkPermission({
                     roles, req,
                     hasOwnership: () => isOwner(req.type, req.subject, req.user)
                 })
-                if(allowed) {
-                    return Promise.resolve()
-                }
-                
-                // app level check
-                return hasAppPermission(req).then((response) => {
 
-                    if (response.result) {
-                        return Promise.resolve()
-                    }
+                // logger.debug('loadRoles', roles)
 
-                    // acl check
-                    const q = Object.assign({}, req)
-                    q.permission = { $in: [ q.permission, 'admin' ] }
-                    
-                    return api.models.Acl.find(req).then((acls) => {
-                        if(acls.filter((acl) => acl.allowed).length) {
+                // if(allowed) {
+                //     return Promise.resolve()
+                // }
+                return loadTokenPermission(req)
+                    .then((tokenAllowed) => {
+                        logger.debug('******************',tokenAllowed)
+
+                        if (allowed && !req.token) {
                             return Promise.resolve()
                         }
-                        return Promise.reject(new errors.Forbidden())
+
+                        // if(allowed && req.token && req.token.type == 'LOGIN') {
+                        //     return Promise.resolve()
+                        // }
+
+                        if (allowed && req.token && tokenAllowed) {
+                            return Promise.resolve()
+                        }
+
+                        return hasAppPermission(req).then((response) => {
+
+                            if (response.result) {
+                                return Promise.resolve()
+                            }
+
+                            // acl check
+                            const q = Object.assign({}, req)
+                            q.permission = { $in: [ q.permission, 'admin' ] }
+
+                            return api.models.Acl.find(req).then((acls) => {
+                                if(acls.filter((acl) => acl.allowed).length) {
+                                    return Promise.resolve()
+                                }
+                                return Promise.reject(new errors.Forbidden())
+                            }).catch((e) => {
+                                logger.debug('User `%s` not allowed to `%s` on `%s` subject %s',
+                                    req.user.username,
+                                    req.permission,
+                                    req.type,
+                                    (req.subject ? req.subject.id : req.subjectId)) || ''
+                                return Promise.reject(e)
+                            })
+                        })
                     }).catch((e) => {
-                        logger.debug('User `%s` not allowed to `%s` on `%s` subject %s',
+                        logger.debug('User `%s` with token `%s` not allowed to `%s` on `%s` subject %s',
                             req.user.username,
+                            req.token.token,
                             req.permission,
                             req.type,
                             (req.subject ? req.subject.id : req.subjectId)) || ''
                         return Promise.reject(e)
                     })
-                })
             })
     }).catch((e) => {
         logger.warn('Check failed: %s', e.message)
@@ -194,7 +293,6 @@ const can = (req) => {
         return Promise.reject(e)
     })
 }
-
 
 const hasAppPermission = (req) => {
 
@@ -222,7 +320,7 @@ const hasAppPermission = (req) => {
         const result = checkPermission({
             req, roles: userAppRoles
         })
-           
+
         return Promise.resolve({ result })
     }).then(({result}) => {
 
@@ -315,30 +413,40 @@ const check = (opts) => {
         return authorized.then(() => {
 
             let user = options.user || req.user
-            
+
             options.domain = req.body.domain || options.domain
 
             if(options.type && options.type == 'user' && !options.domain) {
-                options.domain = req.query.domain 
+                options.domain = req.query.domain
             }
 
             // logger.debug(require('util').inspect(req))
-            
-            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s domain=%s]',
+            // logger.debug(require('util').inspect(req.authInfo.token))
+
+            let token = null
+            if(req.authInfo) {
+                token = req.authInfo.token
+            }
+
+            logger.debug('Check authorization for `%s` to `%s` on `%s` [id=%s domain=%s token=%s]',
                 user.username,
                 options.permission,
                 options.type,
                 options.subjectId || '',
-                options.domain || ''
+                options.domain || '',
+                token.token
             )
 
-            return can({
+            let data = {
                 user,
                 type: options.type || null,
                 permission: options.permission,
                 subjectId: options.subjectId || null,
-                domain: options.domain || null
-            })
+                domain: options.domain || null,
+                token: token || null
+            }
+
+            return can(data)
         }).then(()=> {
             req.isAuthorized = true
             next()
@@ -378,10 +486,10 @@ const isOwner = (type, subject, user) => {
 
 //pattern based /<api>/<id>
 const getId = (req, required = false) => {
-    const pcs = req.url.split('?')[0] 
+    const pcs = req.url.split('?')[0]
     const id = pcs.split('/')[1]
     if (required && !id) throw new errors.BadRequest('Cannot parse id')
-    return id    
+    return id
 }
 
 
@@ -423,6 +531,8 @@ const loader = (type, id) => {
             return sdk.Tree().read({ id })
         case 'app':
             return sdk.App().read({ id })
+        case 'permission':
+            return sdk.Admin().Token().Permission().get(id)
         default:
             return Promise.reject(new errors.BadRequest())
         }

@@ -253,5 +253,97 @@ describe('auth service', function () {
                         })
                 })
         })
+
+        it('should check a token permission before performing operation', function () {
+            return util.getRaptor()
+                .then((adm) => {
+                    const tokenName = util.randomName('token')
+                    const tok = {
+                        name: tokenName,
+                        secret: tokenName + '_foobar',
+                        expires: 1895316383000
+                    }
+                    return adm.Admin().Token()
+                        .create(tok)
+                        .then((token) => {
+                            return adm.Admin().Token().Permission().set(token,['read_user'])
+                                // .then(() => {
+                                //     return adm.Admin().Token().read(token)
+                                //         .then((res) => {
+                                //             assert.equal(res.name, tok.name)
+                                //             return Promise.resolve()
+                                //         })
+                                // })
+                                .then(() => {
+                                    return adm.Admin().User().list()
+                                        .then((res) => {
+                                            // assert.isTrue(res.json.content.length > 0)
+                                            return Promise.resolve(res.getContent().length)
+                                        })
+                                        .then((res) => {
+                                            return util.loginWithToken(token.token)
+                                                .then((rap) => {
+                                                    return rap.Admin().User().list()
+                                                        .then((response) => {
+                                                            assert.equal(response.getContent().length, res)
+                                                            return Promise.resolve()
+                                                        })
+                                                })
+                                        })
+                                })
+                        })
+                })
+        })
+
+        it('should be false when token does not has permission', function () {
+            return util.getRaptor()
+                .then((adm) => {
+                    const tokenName = util.randomName('token')
+                    const tok = {
+                        name: tokenName,
+                        secret: tokenName + '_foobar',
+                        expires: 1895316383000
+                    }
+                    return adm.Admin().Token()
+                        .create(tok)
+                        .then((token) => {
+                            return adm.Admin().Token().Permission().set(token,['read_device'])
+                                .then(() => {
+                                    return Promise.resolve(token)
+                                })
+                        }).then((token) => {
+                            return util.loginWithToken(token.token)
+                                .then((rap) => {
+                                    return rap.Admin().User().list()
+                                        .then((response) => {
+                                            assert.equal(response.getContent().length, 0)
+                                            return Promise.resolve()
+                                        })
+                                        .catch((e) => {
+                                            assert.equal(e.code, 403)
+                                        })
+                                })
+                        })
+                })
+        })
+
+        // it('should check a specific token permission', function () {
+        //     // let token = '$2a$10$OamPL.s.GRZ/qAXlbTAGiesNuHoFQ4F8b3l/MmTppmIOidK2VzlCS'
+        //     let token = '$2a$10$uR7kqtYU1bLv702xZrAnmuh6nHMD50x5MvYnBwcaK6fEnCA3thzlq'
+        //     return util.loginWithToken(token)
+        //         .then((rap) => {
+        //             return rap.Admin().Token().read(token)
+        //                 .then((res) => {
+        //                     assert.equal(JSON.stringify(res), 2)
+        //                     return Promise.resolve()
+        //                 })
+        //             // return rap.Admin().User().list()
+        //             //     .then((res) => {
+        //             //         assert.equal(JSON.stringify(res.json.content), 2)
+        //             //         return Promise.resolve()
+        //             //     })
+        //         })
+        // })
+
     })
 })

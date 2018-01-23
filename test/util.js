@@ -61,7 +61,7 @@ l.newUserWithOwnerId = (ownerId) => {
     u.password = 'passwd_' + u.username
     u.email = u.username + '@test.raptor.local'
     u.roles = ['user']
-    u.ownerId = ownerId 
+    u.ownerId = ownerId
     return u
 }
 
@@ -92,4 +92,12 @@ l.createUserInstanceWithOwner = (ownerId) => {
 
 l.createAdminInstance = () => {
     return l.createUserInstance(['admin'])
+}
+
+l.loginWithToken = (token) => {
+    const r = new Raptor(Object.assign({}, config.sdk, {
+        token: token,
+    }))
+    return r.Auth().login()
+        .then(() => Promise.resolve(r))
 }

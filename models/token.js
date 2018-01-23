@@ -98,6 +98,11 @@ Token.methods.isOwner = function(user) {
     return this.userId === user.id
 }
 
+Token.methods.loadPermissions = function() {
+    const sdk = require('./../raptor').client()
+    return sdk.Admin().Token().Permission().get(this.id)
+}
+
 Token.methods.isExpired = function() {
     if(this.expires === null || this.expires === 0) {
         return false
@@ -106,7 +111,7 @@ Token.methods.isExpired = function() {
 }
 
 Token.methods.isValid = function() {
-    return this.enabled && !this.isExpired() 
+    return this.enabled && !this.isExpired()
 }
 
 Token.methods.merge = function(t) {
