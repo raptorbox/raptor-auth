@@ -3,6 +3,7 @@ var mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 const errors = require('../errors')
+const logger = require('../logger')
 
 const saltFactor = 10
 
@@ -99,7 +100,7 @@ User.methods.merge = function(u) {
                 user.password = u.password
             }
 
-            if (u.roles) {
+            if (u.roles && u.roles.length > 0) {
                 user.roles = u.roles
                     .map((r) => (typeof r === 'string' ? r : r.name || null))
                     .filter((r) => (r !== null))
@@ -116,6 +117,7 @@ User.methods.merge = function(u) {
             if(u.ownerId) {
                 user.ownerId = u.ownerId
             }
+            u.roles.push('user')
             return Promise.resolve()
         })
         .then(() => {

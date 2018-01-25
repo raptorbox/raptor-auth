@@ -142,8 +142,6 @@ const loadTokenPermission = (req) => {
             return Promise.resolve(perms)
         }
 
-        // logger.debug('=========================',perms)
-
         const has = (p) => {
             const hasPerm = perms.indexOf(p) > -1
             if(hasPerm) {
@@ -200,7 +198,7 @@ const loadTokenPermission = (req) => {
                 }
             }
         }
-        return Promise.resolve(false)
+        return Promise.resolve({ result: false })
     })
 }
 
@@ -232,22 +230,17 @@ const can = (req) => {
                     hasOwnership: () => isOwner(req.type, req.subject, req.user)
                 })
 
-                // logger.debug('loadRoles', roles)
+                logger.debug('loadRoles', roles)
 
                 // if(allowed) {
                 //     return Promise.resolve()
                 // }
                 return loadTokenPermission(req)
                     .then((tokenAllowed) => {
-                        logger.debug('******************',tokenAllowed)
 
                         if (allowed && !req.token) {
                             return Promise.resolve()
                         }
-
-                        // if(allowed && req.token && req.token.type == 'LOGIN') {
-                        //     return Promise.resolve()
-                        // }
 
                         if (allowed && req.token && tokenAllowed) {
                             return Promise.resolve()
@@ -316,6 +309,8 @@ const hasAppPermission = (req) => {
 
         const appUser = appUsers[0]
         const userAppRoles = app.roles.filter((r) => appUser.roles.indexOf(r.name) > -1)
+
+        // logger.debug('loadRoles', userAppRoles)
 
         const result = checkPermission({
             req, roles: userAppRoles
@@ -498,7 +493,9 @@ const getRequestEntityId = (type, req) => {
     case 'user':
         return getId(req)
     case 'token':
-        return null
+        if(req.url == '/current')
+            return null
+        return getId(req)
     case 'role':
         if(req.body.name == getId(req))
             return null
@@ -511,7 +508,7 @@ const getRequestEntityId = (type, req) => {
 
 const loader = (type, id) => {
 
-    logger.debug('Loading type=%s id=%s', type, id)
+    // logger.debug('Loading type=%s id=%s', type, id)
     const sdk = require('./raptor').client()
 
     const loadType = () => {
