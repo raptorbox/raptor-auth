@@ -31,7 +31,7 @@
     "passport-http-bearer": "^1.0.1",
     "passport-local": "^1.0.0",
     "passport-oauth2-client-password": "^0.1.2",
-    "raptor-sdk": "^5.0.26",
+    "raptor-sdk": "^5.0.27",
     "swagger-jsdoc": "^1.9.7",
     "uuid": "^3.1.0",
     "winston": "^2.4.0"

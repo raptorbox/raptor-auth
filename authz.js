@@ -225,12 +225,12 @@ const can = (req) => {
         return req.user.loadRoles()
             .then((roles) => {
 
+                logger.debug('loadRoles', roles)
+                
                 const allowed = checkPermission({
                     roles, req,
                     hasOwnership: () => isOwner(req.type, req.subject, req.user)
                 })
-
-                logger.debug('loadRoles', roles)
 
                 // if(allowed) {
                 //     return Promise.resolve()

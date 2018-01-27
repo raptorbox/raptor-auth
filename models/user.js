@@ -83,9 +83,10 @@ User.methods.isOwner = function(user) {
 
 User.methods.loadRoles = function() {
     const Role = require('./role')
-    return Role.find({
+    const roles = Role.find({
         name: { $in: this.roles }
     })
+    return roles
 }
 
 User.methods.merge = function(u) {
@@ -117,7 +118,7 @@ User.methods.merge = function(u) {
             if(u.ownerId) {
                 user.ownerId = u.ownerId
             }
-            u.roles.push('user')
+
             return Promise.resolve()
         })
         .then(() => {

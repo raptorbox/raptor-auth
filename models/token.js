@@ -128,7 +128,11 @@ Token.methods.merge = function(t) {
             }
 
             if (t.expires !== undefined) {
-                token.expires = checkDate(t.expires)
+                if(t.expires === null || t.expires === 0) {
+                    token.expires = 0
+                } else {
+                    token.expires = checkDate(t.expires)
+                }
             }
 
             if (t.enabled !== undefined && t.enabled !== null) {
@@ -143,6 +147,9 @@ Token.methods.merge = function(t) {
 Token.pre('save', function(next) {
     if(!this.id) {
         this.id = uuidv4()
+    }
+    if(this.expires === null) {
+        this.expires = 0
     }
     if(this.type) {
         this.type = this.type.toUpperCase()
