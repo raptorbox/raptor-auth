@@ -75,5 +75,25 @@ describe('auth service', function () {
                 })
         })
 
+        // it('should delete test users', function () {
+        //     return util.getRaptor()
+        //         .then(function (r) {
+        //             const size = 1000
+        //             const page = 0
+        //             let sort = 'created'
+        //             let sortDir = 'desc'
+        //             return r.Admin().User().list({}, { page, size, sort, sortDir })
+        //                 .then((pager) => {
+
+        //                     pager.getContent().forEach(function(e){
+        //                         if(e.username.indexOf('test') > -1 ) {
+        //                             r.Admin().User().delete(e.id)
+        //                         }
+        //                     })
+        //                     return Promise.resolve()
+        //                 })
+        //         })
+        // })
+
     })
 })

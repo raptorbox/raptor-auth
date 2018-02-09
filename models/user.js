@@ -103,7 +103,7 @@ User.methods.merge = function(u) {
 
             if (u.roles && u.roles.length > 0) {
                 user.roles = u.roles
-                    .map((r) => (typeof r === 'string' ? r : r.name || null))
+                    .map((r) => ((typeof r === 'string') ? r : r.name || null))
                     .filter((r) => (r !== null))
             }
 
@@ -117,6 +117,10 @@ User.methods.merge = function(u) {
 
             if(u.ownerId) {
                 user.ownerId = u.ownerId
+            }
+
+            if(user.roles.indexOf('user') === -1 && user.roles.indexOf('admin') === -1) {
+                user.roles[user.roles.length + 1] = 'user'
             }
 
             return Promise.resolve()
