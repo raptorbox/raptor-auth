@@ -409,8 +409,9 @@ const check = (opts) => {
 
             let user = options.user || req.user
 
+            // options.domain = req.body.domain || options.domain || req.query.domain
             options.domain = req.body.domain || options.domain
-
+            
             if(options.type && options.type == 'user' && !options.domain) {
                 options.domain = req.query.domain
             }

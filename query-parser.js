@@ -1,5 +1,5 @@
 
-const parse = ({params = {}, pagerFields = ['limit','page','sort'], queryFields = []}) => {
+const parse = ({params = {}, pagerFields = ['size','page','sort'], queryFields = []}) => {
 
     let getFields = (fields) => {
         return fields.reduce((obj, field) => {
