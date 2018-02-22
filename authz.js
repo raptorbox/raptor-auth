@@ -39,7 +39,6 @@ const loadDomain = (req) => {
     }
 
     if(domain) {
-
         // skip call for app when subj === domain
         if(req.type === 'app' && (req.subject && req.subject.id === domain)) {
             req.domain = req.subject
@@ -216,6 +215,18 @@ const can = (req) => {
             return Promise.resolve(res)
         }
         return loadDomain(req)
+            .then((r) => {
+                return Promise.resolve(r)
+            }).catch((e) =>{
+                logger.debug('App Error: ', e.message, e.code)
+                logger.debug(e.stack)
+                if(e.code === 404 && e.message === 'Not Found') {
+                    if(req.user.isAdmin()) {
+                        return Promise.resolve(true)
+                    }
+                }
+                return Promise.reject()
+            })
     }).then((res) => {
 
         if(res && res.result === true) {
@@ -225,7 +236,7 @@ const can = (req) => {
         return req.user.loadRoles()
             .then((roles) => {
 
-                logger.debug('loadRoles', roles)
+                // logger.debug('**********************loadRoles', roles)
                 
                 const allowed = checkPermission({
                     roles, req,

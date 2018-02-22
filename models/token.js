@@ -3,6 +3,7 @@ var Schema = mongoose.Schema
 const rand = require('./plugin/random')
 const config = require('../config')
 const uuidv4 = require('uuid/v4')
+const logger = require('../logger')
 
 const getDefaultExpires = () => new Date(Date.now() + (config.oauth2.ttl * 1000))
 const checkDate = (expires) => {
@@ -58,6 +59,11 @@ var Token = new Schema({
         type: Boolean,
         default: true,
         required: true,
+    },
+    willExpire: {
+        type: Boolean,
+        required: false,
+        default: false,
     },
     expires: {
         type: Date,
@@ -130,9 +136,13 @@ Token.methods.merge = function(t) {
             if (t.expires !== undefined) {
                 if(t.expires === null || t.expires === 0) {
                     token.expires = 0
+                    token.willExpire = false
                 } else {
+                    token.willExpire = true
                     token.expires = checkDate(t.expires)
                 }
+            } else {
+                token.willExpire = false
             }
 
             if (t.enabled !== undefined && t.enabled !== null) {
@@ -148,8 +158,10 @@ Token.pre('save', function(next) {
     if(!this.id) {
         this.id = uuidv4()
     }
-    if(this.expires === null) {
-        this.expires = 0
+    if(this.expires === 0 || this.expires === null) {
+        this.willExpire = false
+    } else {
+        this.willExpire = true
     }
     if(this.type) {
         this.type = this.type.toUpperCase()

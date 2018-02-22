@@ -3,6 +3,7 @@ module.exports.router = (router) => {
     const logger = require('../logger')
     const api = require('../api')
     const qp = require('../query-parser')
+    const sdk = require('../raptor').client()
 
     router.get('/', function(req, res) {
 
@@ -71,8 +72,22 @@ module.exports.router = (router) => {
         return api.User.read({ id: req.params.userId })
             .then(() => api.User.delete({ id: req.params.userId })
                 .then(() => {
-                    logger.debug('Deleted user %s', req.params.userId)
                     res.status(202).send()
+                    return sdk.App().search({users: [req.params.userId]})
+                        .then((pager) => {
+                            let uid = req.params.userId
+                            let apps = pager.getContent()
+                            apps.forEach((a) => {
+                                logger.debug(uid)
+                                logger.debug(a.id)
+                                sdk.App().deleteUser(a.id, uid).then((ap) => {
+                                    logger.debug('User also removed from app %s', ap.id)
+                                })
+                            })
+                        })
+                })
+                .catch((e)=>{
+                    logger.debug(e)    
                 }))
     })
 
