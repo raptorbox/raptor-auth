@@ -315,7 +315,6 @@ const hasAppPermission = (req) => {
         const appUsers = app.users.filter((u) => u.id === req.user.id)
         if (appUsers.length === 0) {
             logger.debug('User %s is not in app %s', req.user.id, app.id)
-            app = null;
             return Promise.resolve({ result: false })
         }
 
