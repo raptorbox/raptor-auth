@@ -16,7 +16,6 @@ module.exports.connect = () => {
     if(db === null) {
         return mongoose.connect(
             config.mongodb.url, {
-                useMongoClient: true,
                 promiseLibrary: mongoose.Promise
             })
             .then((conn) => {

@@ -22,7 +22,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.2",
     "express-promise-router": "^2.0.0",
-    "mongoose": "^4.12.5",
+    "mongoose": "^5.0.14",
     "mqtt": "^2.15.0",
     "node-uuid": "^1.4.8",
     "oauth2orize": "^1.11.0",

@@ -266,9 +266,10 @@ const can = (req) => {
                             // acl check
                             const q = Object.assign({}, req)
                             q.permission = { $in: [ q.permission, 'admin' ] }
-
-                            return api.models.Acl.find(req).then((acls) => {
-                                if(acls.filter((acl) => acl.allowed).length) {
+                            logger.debug('req.permission: ' + req.permission + ' req.subjectId: ' + req.subjectId + ' req.userId: ' + req.userId + ' req.type: ' + req.type)
+                            return Promise.resolve(api.models.Acl.find(req)).then((acls) => {
+                                if(acls && acls.length > 0 && acls.filter((acl) => acl.allowed).length) {
+                                    logger.debug('done')
                                     return Promise.resolve()
                                 }
                                 return Promise.reject(new errors.Forbidden())
@@ -284,7 +285,7 @@ const can = (req) => {
                     }).catch((e) => {
                         logger.debug('User `%s` with token `%s` not allowed to `%s` on `%s` subject %s',
                             req.user.username,
-                            req.token.token,
+                            (req.token) ? req.token.token : '',
                             req.permission,
                             req.type,
                             (req.subject ? req.subject.id : req.subjectId)) || ''

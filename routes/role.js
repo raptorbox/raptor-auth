@@ -6,7 +6,8 @@ const qp = require('../query-parser')
 
 // disallow configuration managed roles
 const isReservedRole = (r) => {
-    return !r.domain && Object.values(config.roles).filter((r1) => r1.name === r.name).length !== 0
+    let objKeysMap = Object.keys(config.roles).map((k) => config.roles[k]);
+    return !r.domain && objKeysMap.filter((r1) => r1.name === r.name).length !== 0
 }
 
 module.exports.router = (router) => {
