@@ -47,6 +47,10 @@ const User = new Schema({
     ownerId: {
         type: String,
         ref: 'User'
+    },
+    nodered: {
+        type: Boolean,
+        default: false
     }
 }, {
     toJSON: {
@@ -115,6 +119,10 @@ User.methods.merge = function(u) {
                 user.enabled = u.enabled
             }
 
+            if (u.nodered !== undefined && u.nodered !== null) {
+                user.nodered = u.nodered
+            }
+
             if(u.ownerId) {
                 user.ownerId = u.ownerId
             }
@@ -148,7 +156,9 @@ User.methods.merge = function(u) {
                     return Promise.resolve()
                 })
         })
-        .then(() => Promise.resolve(user))
+        .then(() => {
+            Promise.resolve(user)
+        })
 }
 
 User.methods.isService = function() {
