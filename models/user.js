@@ -157,7 +157,7 @@ User.methods.merge = function(u) {
                 })
         })
         .then(() => {
-            Promise.resolve(user)
+            return Promise.resolve(user)
         })
 }
 
