@@ -18,7 +18,30 @@ module.exports.router = (router) => {
             queryFields: queryFields
         })
 
-        return api.User.list(p.query, p.pager)
+        const q = {}
+        const orQ = []
+
+        if (p.query.id) {
+            orQ.push({id: new RegExp(p.query.id, 'i')})
+        }
+
+        if (p.query.username) {
+            orQ.push({username: new RegExp(p.query.username, 'i')})
+        }
+
+        if(p.query.email) {
+            q.email = p.query.email
+        }
+
+        if (p.query.ownerId) {
+            q.ownerId = p.query.ownerId
+        }
+
+        if (orQ.length > 0) {
+            q['$or'] = orQ
+        }
+
+        return api.User.list(q, p.pager)
             .then((users) => {
                 logger.debug('Found %s users', users.length)
                 res.json(users)
