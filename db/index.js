@@ -30,7 +30,7 @@ module.exports.disconnect = () => {
     if(db === null) {
         return Promise.resolve()
     }
-    return db.close()
+    return db.disconnect()
         .then(() => {
             db = null
             return Promise.resolve()

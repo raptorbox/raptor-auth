@@ -1,0 +1,30 @@
+
+<div class="container justify-content-center">
+  <div class="jumbotron vertical-center">
+      <div class="card bg-light">
+        <div class="card-body">
+          <p>Hi <%= user.username %>!</p>
+          <p><b><%= client.name %></b> is requesting access to your account.</p>
+          <p>Do you approve?</p>
+          <form class="form-horizontal" action="/auth/oauth/decision" method="post">
+              <div class="form-group">
+                  <div class="col-sm-12">
+                    <input name="transaction_id" type="hidden" value="<%= transactionId %>" />
+                  </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-12 text-right">
+                  <button type="submit" value="Allow" id="allow" class="btn btn-default">Authorize</button>
+                  <button type="submit" value="Deny" name="cancel" id="deny" class="btn btn-default">Deny</button>
+                </div>
+              </div>
+          </form>
+        </div>
+      </div>
+  </div>
+</div>
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
